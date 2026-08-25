@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import App from "../../src/App.js";
+import CheckSystem from '../../src/CheckSystem';
 import * as api from "../../src/api.js";
 
 describe("App", () => {
   it("renders the TokTickIT heading", () => {
-    render(<App />);
+    render(<CheckSystem />);
     expect(screen.getByText(/TokTickIT/i)).toBeInTheDocument();
   });
 
@@ -20,7 +20,7 @@ describe("App", () => {
       ]
     });
 
-    render(<App />);
+    render(<CheckSystem />);
 
     const button = screen.getByRole("button", { name: /Check System/i });
     fireEvent.click(button);
@@ -35,7 +35,7 @@ describe("App", () => {
   it("shows an Offline error message when the API is unavailable", async () => {
     vi.spyOn(api, "checkSystem").mockRejectedValue(new Error("API Error"));
 
-    render(<App />);
+    render(<CheckSystem />);
 
     const button = screen.getByRole("button", { name: /Check System/i });
     fireEvent.click(button);
