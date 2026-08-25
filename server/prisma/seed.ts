@@ -42,6 +42,25 @@ async function main() {
   }
   console.log('Development Requesters seeded.');
   
+  const relatedSystems = [
+    { name: 'Email', isActive: true },
+    { name: 'Campus Wi-Fi', isActive: true },
+    { name: 'VPN', isActive: true },
+    { name: 'LEB2 App', isActive: true },
+    { name: 'Grade Submission App', isActive: true },
+    { name: 'Printer', isActive: true },
+    { name: 'Corporate Laptop', isActive: true },
+  ];
+
+  for (const sys of relatedSystems) {
+    await prisma.relatedSystem.upsert({
+      where: { name: sys.name },
+      update: {}, 
+      create: sys,
+    });
+  }
+  console.log('Related Systems seeded.');
+
   console.log("Seeding finished.");
 }
 

@@ -24,6 +24,7 @@ model Category {
   id        Int      @id @default(autoincrement())
   name      String   @unique
   createdAt DateTime @default(now())
+  tickets   Ticket[]
 }
 
 model DevelopmentRequester {
@@ -32,4 +33,43 @@ model DevelopmentRequester {
   email     String   @unique
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+  tickets   Ticket[]
+}
+
+model RelatedSystem {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  tickets   Ticket[]
+}
+
+model Ticket {
+  id                Int      @id @default(autoincrement())
+  ticketNumber      String   @unique 
+  summary           String
+  description       String
+  requestedPriority String   
+  currentStatus     String   @default("New")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  requesterId       Int
+  requester         DevelopmentRequester @relation(fields: [requesterId], references: [id])
+  categoryId        Int
+  category          Category @relation(fields: [categoryId], references: [id])
+  relatedSystemId   Int
+  relatedSystem     RelatedSystem @relation(fields: [relatedSystemId], references: [id])
+  
+  attachments       Attachment[]
+}
+
+model Attachment {
+  id           Int      @id @default(autoincrement())
+  originalName String
+  storagePath  String
+  isRemoved    Boolean  @default(false) 
+  createdAt    DateTime @default(now())
+
+  ticketId     Int
+  ticket       Ticket   @relation(fields: [ticketId], references: [id])
 }

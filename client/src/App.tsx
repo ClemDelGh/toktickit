@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import RequesterSelector from './RequesterSelector';
+import CreateTicket from './CreateTicket';
 
 interface Requester {
   id: number;
@@ -36,8 +37,8 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="container mt-5">
-        <div className="alert" style={{ backgroundColor: '#EAF6EF', border: '1px solid #0B7A46', color: '#0B7A46' }}>
+      <main className="container mt-4 mb-5">
+        <div className="alert mb-4" style={{ backgroundColor: '#EAF6EF', border: '1px solid #0B7A46', color: '#0B7A46' }}>
           <h4 className="alert-heading">Welcome, {currentRequester.name}!</h4>
           <p className="mb-0">
             Your Development Requester context is now securely stored in the app state. 
@@ -45,6 +46,7 @@ export default function App() {
           </p>
         </div>
         
+        <CreateTicket requester={currentRequester} />
       </main>
     </div>
   );
