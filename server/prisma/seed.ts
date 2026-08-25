@@ -25,6 +25,23 @@ async function main() {
     console.log(`Upserted category: ${name}`);
   }
 
+  const requesters = [
+    { email: 'jennifer.a@example.com', name: 'Jennifer Anderson', isActive: true },
+    { email: 'michael.b@example.com', name: 'Michael Brown', isActive: true },
+    { email: 'sarah.j@example.com', name: 'Sarah Johnson', isActive: true },
+    { email: 'david.l@example.com', name: 'David Lee', isActive: true },
+    { email: 'inactive.user@example.com', name: 'Inactive User', isActive: false },
+  ];
+
+  for (const req of requesters) {
+    await prisma.developmentRequester.upsert({
+      where: { email: req.email },
+      update: {},
+      create: req,
+    });
+  }
+  console.log('Development Requesters seeded.');
+  
   console.log("Seeding finished.");
 }
 

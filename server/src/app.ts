@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import { getPrisma } from "./prisma.js";
+
 // getPrisma() is your lazy database handle. Call it INSIDE a route when you
 // need the DB (Issue 4). It is intentionally unused until then.
 void getPrisma;
@@ -40,4 +41,24 @@ app.get("/api/categories", async (_req: Request, res: Response) => {
     res.status(500).json({ error: "Unable to fetch categories" });
   }
 });
+
+app.get('/api/development-requesters', async (_req: Request, res: Response) => {
+  try {
+    const requesters = await getPrisma().developmentRequester.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+    res.json(requesters);
+  } catch (error) {
+    console.error('Error fetching requesters:', error);
+    res.status(500).json({ error: 'Failed to fetch requesters' });
+  }
+});
+
 export default app;

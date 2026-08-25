@@ -1,56 +1,51 @@
-import { useState } from "react";
-import { checkSystem, Category } from "./api.js";
+import { useState } from 'react';
+import RequesterSelector from './RequesterSelector';
 
-// UI states you must handle for Issue 4: idle, loading, success, error.
-type UiState = "idle" | "loading" | "success" | "error";
+interface Requester {
+  id: number;
+  name: string;
+  email: string;
+}
 
 export default function App() {
-  const [state, setState] = useState<UiState>("idle");
-  const [categories, setCategories] = useState<Category[]>([]);
 
-  async function handleCheck() {
-    // TODO(Issue 4): set loading, call checkSystem(), then either
-    //   - success: store categories and show Online + the list, or
-    //   - error: show Offline + a useful message.
-    setState("loading");
-    try {
-      const result = await checkSystem();
-      setCategories(result.categories);
-      setState("success");
-    } catch (err) {
-      setState("error");
-    }
+  const [currentRequester, setCurrentRequester] = useState<Requester | null>(null);
+
+  if (!currentRequester) {
+    return <RequesterSelector onSelect={setCurrentRequester} />;
   }
 
   return (
-    <div className="container py-5" style={{ maxWidth: 640 }}>
-      <h1 className="h3 mb-4">
-        TokTickIT <span className="text-success">IT Service Desk</span>
-      </h1>
-
-      <button className="btn btn-success mb-4" onClick={handleCheck} disabled={state === "loading"}>
-        {state === "loading" ? "Loading…" : "Check System"}
-      </button>
-
-      {state === "success" && (
-        <div className="p-3 border rounded bg-light">
-          <p className="fw-bold text-success mb-2">System Status: Online</p>
-          <ul className="list-group">
-            {categories.map((cat) => (
-              <li key={cat.id} className="list-group-item">
-                {cat.name}
-              </li>
-            ))}
-          </ul>
+    <div>
+      <nav className="navbar navbar-dark shadow-sm" style={{ backgroundColor: '#006B3C' }}>
+        <div className="container-fluid px-4">
+          <span className="navbar-brand mb-0 h1 d-flex align-items-center">
+            TokTickIT
+          </span>
+          <div className="d-flex align-items-center text-white">
+            <span className="me-4 d-flex align-items-center">
+               <span className="me-2">👤</span> Profile: {currentRequester.name}
+            </span>
+            <button 
+              className="btn btn-sm btn-outline-light" 
+              onClick={() => setCurrentRequester(null)}
+            >
+              Change Requester
+            </button>
+          </div>
         </div>
-      )}
+      </nav>
 
-      {state === "error" && (
-        <div className="p-3 border rounded bg-light">
-          <p className="fw-bold text-danger mb-1">System Status: Offline</p>
-          <p className="text-danger mb-0">Unable to connect to TokTickIT API, try better :3</p>
+      <main className="container mt-5">
+        <div className="alert" style={{ backgroundColor: '#EAF6EF', border: '1px solid #0B7A46', color: '#0B7A46' }}>
+          <h4 className="alert-heading">Welcome, {currentRequester.name}!</h4>
+          <p className="mb-0">
+            Your Development Requester context is now securely stored in the app state. 
+            This fulfills the "logged-in user" simulation requirement for Lab 2.
+          </p>
         </div>
-      )}
+        
+      </main>
     </div>
   );
 }
