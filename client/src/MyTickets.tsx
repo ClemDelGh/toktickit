@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import RequesterTicketDetail from './RequesterTicketDetail'; // 👈 On importe ton nouvel écran
 
 interface Requester { id: number; name: string; email: string; }
 interface Ticket {
@@ -19,6 +20,8 @@ export default function MyTickets({ requester }: Props) {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
 
   useEffect(() => {
     fetch('http://localhost:3000/api/tickets', {
@@ -38,6 +41,16 @@ export default function MyTickets({ requester }: Props) {
         setLoading(false);
       });
   }, [requester.id]);
+
+  if (selectedTicketId) {
+    return (
+      <RequesterTicketDetail 
+        ticketId={selectedTicketId} 
+        requester={requester} 
+        onBack={() => setSelectedTicketId(null)}
+      />
+    );
+  }
 
   const filteredTickets = tickets.filter(t => 
     t.ticketNumber.toLowerCase().includes(search.toLowerCase()) ||
@@ -78,7 +91,11 @@ export default function MyTickets({ requester }: Props) {
               </thead>
               <tbody>
                 {filteredTickets.map(t => (
-                  <tr key={t.id}>
+                  <tr 
+                    key={t.id} 
+                    onClick={() => setSelectedTicketId(t.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <td className="fw-bold text-success">{t.ticketNumber}</td>
                     <td>{t.summary}</td>
                     <td>{t.category.name}</td>
