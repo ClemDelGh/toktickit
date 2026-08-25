@@ -116,4 +116,32 @@ app.post('/api/tickets', async (req, res) => {
   }
 });
 
+app.get('/api/tickets', async (req, res) => {
+  const requesterId = req.headers['x-requester-id'];
+  if (!requesterId) {
+    return res.status(403).json({ error: 'Missing X-Requester-Id header' });
+  }
+
+  try {
+    const prisma = getPrisma();
+    const tickets = await prisma.ticket.findMany({
+      where: {
+        requesterId: Number(requesterId),
+      },
+      include: {
+        category: true,
+        relatedSystem: true,
+      },
+      orderBy: {
+        createdAt: 'desc', 
+      },
+    });
+
+    res.status(200).json(tickets);
+  } catch (error) {
+    console.error('Error fetching tickets:', error);
+    res.status(500).json({ error: 'Failed to fetch tickets' });
+  }
+});
+
 export default app;

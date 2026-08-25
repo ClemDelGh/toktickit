@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import RequesterSelector from './RequesterSelector';
 import CreateTicket from './CreateTicket';
+import MyTickets from './MyTickets';
 
 interface Requester {
   id: number;
@@ -9,8 +10,8 @@ interface Requester {
 }
 
 export default function App() {
-
   const [currentRequester, setCurrentRequester] = useState<Requester | null>(null);
+  const [activeTab, setActiveTab] = useState<'create' | 'list'>('create');
 
   if (!currentRequester) {
     return <RequesterSelector onSelect={setCurrentRequester} />;
@@ -25,7 +26,7 @@ export default function App() {
           </span>
           <div className="d-flex align-items-center text-white">
             <span className="me-4 d-flex align-items-center">
-               <span className="me-2">👤</span> Profile: {currentRequester.name}
+               <span className="me-2"></span> Profile: {currentRequester.name}
             </span>
             <button 
               className="btn btn-sm btn-outline-light" 
@@ -37,16 +38,35 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="container mt-4 mb-5">
-        <div className="alert mb-4" style={{ backgroundColor: '#EAF6EF', border: '1px solid #0B7A46', color: '#0B7A46' }}>
-          <h4 className="alert-heading">Welcome, {currentRequester.name}!</h4>
-          <p className="mb-0">
-            Your Development Requester context is now securely stored in the app state. 
-            This fulfills the "logged-in user" simulation requirement for Lab 2.
-          </p>
+      <div className="bg-light border-bottom py-2">
+        <div className="container">
+          <div className="btn-group" role="group">
+            <button 
+              type="button" 
+              className={`btn btn-sm ${activeTab === 'create' ? 'text-white' : 'btn-outline-success'}`}
+              style={{ backgroundColor: activeTab === 'create' ? '#006B3C' : 'transparent', borderColor: '#006B3C' }}
+              onClick={() => setActiveTab('create')}
+            >
+              Create Ticket
+            </button>
+            <button 
+              type="button" 
+              className={`btn btn-sm ${activeTab === 'list' ? 'text-white' : 'btn-outline-success'}`}
+              style={{ backgroundColor: activeTab === 'list' ? '#006B3C' : 'transparent', borderColor: '#006B3C' }}
+              onClick={() => setActiveTab('list')}
+            >
+              My Tickets
+            </button>
+          </div>
         </div>
-        
-        <CreateTicket requester={currentRequester} />
+      </div>
+
+      <main className="container mt-4 mb-5">
+        {activeTab === 'create' ? (
+          <CreateTicket requester={currentRequester} />
+        ) : (
+          <MyTickets requester={currentRequester} />
+        )}
       </main>
     </div>
   );
