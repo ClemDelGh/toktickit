@@ -1,4 +1,4 @@
-# TokTickIT - Lab 1
+# TokTickIT - Lab 
 
 Course:CPE334 - Semester 1/2026. 
 An IT service desk application implementing a full-stack vertical slice (React, Express, Prisma, PostgreSQL)
