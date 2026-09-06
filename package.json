@@ -1,0 +1,25 @@
+{
+  "name": "toktickit",
+  "version": "1.0.0",
+  "description": "Course:CPE334 - Semester 1/2026.  An IT service desk application implementing a full-stack vertical slice (React, Express, Prisma, PostgreSQL)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ClemDelGh/toktickit.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ClemDelGh/toktickit/issues"
+  },
+  "homepage": "https://github.com/ClemDelGh/toktickit#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.4.1"
+  }
+}
