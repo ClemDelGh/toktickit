@@ -4,11 +4,16 @@ import { getPrisma } from "./prisma.js";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import authRouter from './routes/auth?js';
+import cookieParser from 'cookie-parser';
+import authRouter from './routes/auth.js';
 
 export const app = express();
 
 app.use(cors());        
 app.use(express.json());
+app.use(cookieParser());
+app.use('/api/auth', authRouter);
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
