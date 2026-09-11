@@ -4,9 +4,8 @@ import { getPrisma } from "./prisma.js";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import authRouter from './routes/auth?js';
 import cookieParser from 'cookie-parser';
-import authRouter from './routes/auth.js';
+import authRoutes from './routes/auth.js';
 
 export const app = express();
 
@@ -14,6 +13,9 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 app.use('/api/auth', authRouter);
+
+app.use(cookieParser());
+app.use('/api/auth', authRoutes);
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
@@ -58,8 +60,8 @@ app.get("/api/categories", async (_req: Request, res: Response) => {
 
 app.get('/api/development-requesters', async (_req: Request, res: Response) => {
   try {
-    const requesters = await getPrisma().developmentRequester.findMany({
-      where: { isActive: true },
+    const requesters = await getPrisma().user.findMany({
+      where: { role: 'Requester', isActive: true },
       select: { id: true, name: true, email: true },
     });
     res.json(requesters);
@@ -105,7 +107,7 @@ app.post('/api/tickets', async (req, res) => {
         summary,
         description,
         requestedPriority,
-        currentStatus: 'New',
+        status: 'New',
         categoryId: Number(categoryId),
         relatedSystemId: Number(relatedSystemId),
         requesterId: Number(requesterId)

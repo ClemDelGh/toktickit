@@ -19,7 +19,7 @@ describe('POST /api/tickets', () => {
 
     expect(response.status).toBe(201);
     expect(response.body.ticketNumber).toMatch(/^TKT-\d{4}-\d+$/);
-    expect(response.body.currentStatus).toBe('New'); 
+    expect(response.body.status).toBe('New');
     expect(response.body.summary).toBe(payload.summary);
   });
 

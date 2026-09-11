@@ -1,16 +1,16 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { getPrisma } from '../prisma.js'; // Assure-toi que l'import correspond à ton projet
+import { getPrisma } from '../prisma.js';
 
 const router = Router();
+const prisma = getPrisma();
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-lab3-key';
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const prisma = getPrisma();
 
     const user = await prisma.user.findUnique({ where: { email } });
 
@@ -29,7 +29,6 @@ router.post('/login', async (req, res) => {
       { expiresIn: '1d' }
     );
 
-    // On place le token dans un cookie sécurisé
     res.cookie('auth_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -48,11 +47,12 @@ router.post('/login', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', async (req, res) => {
   try {
-    const token = req.cookies?.auth_token;
+    // Le point d'interrogation protège en cas de cookies absents
+    const token = req.cookies?.auth_token; 
     if (!token) return res.status(401).json({ error: 'Not authenticated' });
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const user = await getPrisma().user.findUnique({ where: { id: decoded.userId } });
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
 
     if (!user || !user.isActive) {
       return res.status(401).json({ error: 'User not found or inactive' });
@@ -80,7 +80,6 @@ router.post('/change-password', async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const { currentPassword, newPassword } = req.body;
 
-    const prisma = getPrisma();
     const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
