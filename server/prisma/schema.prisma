@@ -1,4 +1,3 @@
-// Prisma schema — datasource and generator are pre-wired.
 // Your DATABASE_URL lives in server/.env (copy it from .env.example).
 
 generator client {
@@ -10,15 +9,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ---------------------------------------------------------------------------
-// Issue 3 — Create and seed IT request categories
-// Define a Category model with:
-//   id        Int      @id @default(autoincrement())
-//   name      String   @unique
-//   createdAt DateTime @default(now())
-// Then run:  npx prisma migrate dev --name init
-// TODO(Issue 3): add the Category model below.
-// ---------------------------------------------------------------------------
+enum Role {
+  Requester
+  ITStaff
+  Administrator
+}
+
+enum TicketStatus {
+  New
+  Open
+  InProgress
+  WaitingForRequester
+  Resolved
+  Closed
+  Reopened
+  Cancelled
+}
+
 
 model Category {
   id        Int      @id @default(autoincrement())
@@ -27,13 +34,18 @@ model Category {
   tickets   Ticket[]
 }
 
-model DevelopmentRequester {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  tickets   Ticket[]
+model User {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  email              String   @unique
+  passwordHash       String
+  role               Role     @default(Requester)
+  isActive           Boolean  @default(true)
+  mustChangePassword Boolean  @default(true)
+  createdAt          DateTime @default(now())
+
+  submittedTickets   Ticket[] @relation("TicketRequester")
+  ownedTickets       Ticket[] @relation("TicketOwner")
 }
 
 model RelatedSystem {
@@ -49,12 +61,17 @@ model Ticket {
   summary           String
   description       String
   requestedPriority String   
-  currentStatus     String   @default("New")
+  itPriority        String? 
+  status            TicketStatus @default(New)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   requesterId       Int
-  requester         DevelopmentRequester @relation(fields: [requesterId], references: [id])
+  requester         User     @relation("TicketRequester", fields: [requesterId], references: [id])
+
+  ticketOwnerId     Int?
+  ticketOwner       User?    @relation("TicketOwner", fields: [ticketOwnerId], references: [id])
+  
   categoryId        Int
   category          Category @relation(fields: [categoryId], references: [id])
   relatedSystemId   Int
