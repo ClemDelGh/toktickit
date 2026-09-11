@@ -47,7 +47,8 @@ router.post('/login', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', async (req, res) => {
   try {
-    const token = req.cookies.auth_token;
+    // Le point d'interrogation protège en cas de cookies absents
+    const token = req.cookies?.auth_token; 
     if (!token) return res.status(401).json({ error: 'Not authenticated' });
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
@@ -73,7 +74,7 @@ router.post('/logout', (req, res) => {
 // POST /api/auth/change-password
 router.post('/change-password', async (req, res) => {
   try {
-    const token = req.cookies.auth_token;
+    const token = req.cookies?.auth_token;
     if (!token) return res.status(401).json({ error: 'Not authenticated' });
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
