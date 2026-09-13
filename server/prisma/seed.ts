@@ -1,4 +1,5 @@
 import { getPrisma } from "../src/prisma.js";
+import bcrypt from "bcrypt";
 
 async function main() {
   const prisma = getPrisma();
@@ -18,7 +19,7 @@ async function main() {
     });
   }
 
-  const defaultHash = "$2a$12$R9h/cIPz0gi.URNNX3rubedAK0ReQxNxyWIVJhPtP1w.x.Zk2vRjK";
+  const defaultHash = await bcrypt.hash("password", 12);
 
   const users = [
     { email: "jennifer.a@example.com", name: "Jennifer Anderson", isActive: true, role: "Requester", passwordHash: defaultHash, mustChangePassword: true },
@@ -33,10 +34,15 @@ async function main() {
     { email: "admin@example.com", name: "System Admin", isActive: true, role: "Administrator", passwordHash: defaultHash, mustChangePassword: true }
   ];
 
-  for (const user of users) {
+ for (const user of users) {
     await prisma.user.upsert({
       where: { email: user.email },
-      update: {},
+      update: {
+        passwordHash: user.passwordHash,
+        role: user.role,
+        isActive: user.isActive,
+        mustChangePassword: user.mustChangePassword
+      },
       create: user
     });
   }
