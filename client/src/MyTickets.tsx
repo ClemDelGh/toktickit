@@ -1,21 +1,18 @@
 import { useState, useEffect } from 'react';
-import RequesterTicketDetail from './RequesterTicketDetail'; // 👈 On importe ton nouvel écran
+import RequesterTicketDetail from './RequesterTicketDetail';
 
-interface Requester { id: number; name: string; email: string; }
 interface Ticket {
   id: number;
   ticketNumber: string;
   summary: string;
   requestedPriority: string;
-  currentStatus: string;
+  status: string;
   createdAt: string;
   category: { name: string };
   relatedSystem: { name: string };
 }
 
-interface Props { requester: Requester; }
-
-export default function MyTickets({ requester }: Props) {
+export default function MyTickets() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -24,9 +21,7 @@ export default function MyTickets({ requester }: Props) {
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/tickets', {
-      headers: { 'X-Requester-Id': String(requester.id) }
-    })
+    fetch('/api/tickets')
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch tickets');
         return res.json();
@@ -40,13 +35,12 @@ export default function MyTickets({ requester }: Props) {
         setError('Unable to load your tickets.');
         setLoading(false);
       });
-  }, [requester.id]);
+  }, []);
 
   if (selectedTicketId) {
     return (
       <RequesterTicketDetail 
         ticketId={selectedTicketId} 
-        requester={requester} 
         onBack={() => setSelectedTicketId(null)}
       />
     );
@@ -106,7 +100,7 @@ export default function MyTickets({ requester }: Props) {
                       </span>
                     </td>
                     <td>
-                      <span className="badge bg-success">{t.currentStatus}</span>
+                      <span className="badge bg-success">{t.status}</span>
                     </td>
                     <td>{new Date(t.createdAt).toLocaleDateString()}</td>
                   </tr>

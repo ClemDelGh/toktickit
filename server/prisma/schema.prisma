@@ -46,6 +46,7 @@ model User {
 
   submittedTickets   Ticket[] @relation("TicketRequester")
   ownedTickets       Ticket[] @relation("TicketOwner")
+  comments PublicComment[]
 }
 
 model RelatedSystem {
@@ -78,6 +79,7 @@ model Ticket {
   relatedSystem     RelatedSystem @relation(fields: [relatedSystemId], references: [id])
   
   attachments       Attachment[]
+  comments PublicComment[]
 }
 
 model Attachment {
@@ -89,4 +91,17 @@ model Attachment {
 
   ticketId     Int
   ticket       Ticket   @relation(fields: [ticketId], references: [id])
+}
+
+model PublicComment {
+  id        Int      @id @default(autoincrement())
+  text      String
+  createdAt DateTime @default(now())
+
+  // Relations
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
 }

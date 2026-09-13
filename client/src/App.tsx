@@ -78,9 +78,9 @@ export default function App() {
       <main className="container mt-4 mb-5">
         {user.role === 'Requester' ? (
           activeTab === 'create' ? (
-            <CreateTicket requester={user} />
+            <CreateTicket />
           ) : (
-            <MyTickets requester={user} />
+            <MyTickets />
           )
         ) : (
           <div className="alert alert-info">
