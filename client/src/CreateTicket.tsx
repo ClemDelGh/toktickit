@@ -1,11 +1,12 @@
 import { useState, useEffect, FormEvent } from 'react';
+import { useAuth } from './contexts/AuthContext';
 
-interface Requester { id: number; name: string; email: string; }
 interface ReferenceItem { id: number; name: string; }
 
-interface Props { requester: Requester; }
 
-export default function CreateTicket({ requester }: Props) {
+export default function CreateTicket() {
+  const { user } = useAuth(); 
+
   const [categories, setCategories] = useState<ReferenceItem[]>([]);
   const [systems, setSystems] = useState<ReferenceItem[]>([]);
   
@@ -23,8 +24,8 @@ export default function CreateTicket({ requester }: Props) {
 
   useEffect(() => {
     Promise.all([
-      fetch('http://localhost:3000/api/categories').then(res => res.json()),
-      fetch('http://localhost:3000/api/related-systems').then(res => res.json())
+      fetch('/api/categories').then(res => res.json()),
+      fetch('/api/related-systems').then(res => res.json())
     ]).then(([cats, sys]) => {
       setCategories(cats);
       setSystems(sys);
@@ -53,11 +54,11 @@ export default function CreateTicket({ requester }: Props) {
 
     setSubmitting(true);
     try {
-      const response = await fetch('http://localhost:3000/api/tickets', {
+      const response = await fetch('/api/tickets', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Requester-Id': String(requester.id)
+          'Content-Type': 'application/json'
+          // X-Requester-Id est supprimé ici aussi !
         },
         body: JSON.stringify({
           categoryId: Number(categoryId),
@@ -106,7 +107,7 @@ export default function CreateTicket({ requester }: Props) {
           <div className="row mb-3">
             <div className="col-md-6">
               <label className="form-label fw-bold text-dark">Requester</label>
-              <input type="text" className="form-control bg-light" value={requester.name} disabled />
+              <input type="text" className="form-control bg-light" value={user?.name || ''} disabled />
             </div>
             <div className="col-md-6">
               <label className="form-label fw-bold text-dark">Ticket Date</label>

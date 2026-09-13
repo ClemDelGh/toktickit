@@ -1,22 +1,22 @@
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { getPrisma } from "./prisma.js";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import cookieParser from 'cookie-parser';
-import authRoutes from './routes/auth.js';
+import jwt from 'jsonwebtoken';
+import authRoutes from './routes/auth.js'; // Assure-toi de l'extension .ts ou .js selon ta config
 
 export const app = express();
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-lab3-key';
 
 app.use(cors());        
 app.use(express.json());
 app.use(cookieParser());
-app.use('/api/auth', authRouter);
-
-app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 
+// --- CONFIGURATION MULTER ---
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     const dir = 'uploads/';
@@ -41,7 +41,21 @@ const upload = multer({
   }
 });
 
-void getPrisma;
+// --- MIDDLEWARE D'AUTHENTIFICATION ---
+// Remplace le faux en-tête x-requester-id par la vraie session serveur
+const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+  const token = req.cookies?.auth_token;
+  if (!token) return res.status(401).json({ error: 'Not authenticated' });
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    // On attache les infos de l'utilisateur à la requête
+    (req as any).user = decoded; 
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+};
 
 app.get("/api/health", (_req: Request, res: Response) => {
   res.status(200).json({ status : "ok", service : "TokTickIT API" });
@@ -49,25 +63,10 @@ app.get("/api/health", (_req: Request, res: Response) => {
 
 app.get("/api/categories", async (_req: Request, res: Response) => {
   try {
-    const categories = await getPrisma().category.findMany({
-      orderBy: { id: "asc" }
-    });
+    const categories = await getPrisma().category.findMany({ orderBy: { id: "asc" } });
     res.status(200).json(categories);
   } catch (error) {
     res.status(500).json({ error: "Unable to fetch categories" });
-  }
-});
-
-app.get('/api/development-requesters', async (_req: Request, res: Response) => {
-  try {
-    const requesters = await getPrisma().user.findMany({
-      where: { role: 'Requester', isActive: true },
-      select: { id: true, name: true, email: true },
-    });
-    res.json(requesters);
-  } catch (error) {
-    console.error('Error fetching requesters:', error);
-    res.status(500).json({ error: 'Failed to fetch requesters' });
   }
 });
 
@@ -80,15 +79,15 @@ app.get('/api/related-systems', async (_req, res) => {
     });
     res.json(systems);
   } catch (error) {
-    console.error('Error fetching related systems:', error);
     res.status(500).json({ error: 'Failed to fetch related systems' });
   }
 });
 
-app.post('/api/tickets', async (req, res) => {
-  const requesterId = req.headers['x-requester-id'];
-  if (!requesterId) return res.status(403).json({ error: 'Missing X-Requester-Id header' });
+// --- ROUTES PROTEGEES PAR requireAuth ---
 
+app.post('/api/tickets', requireAuth, async (req, res) => {
+  const requesterId = (req as any).user.userId; // L'identité vient de la session !
+  
   const { categoryId, relatedSystemId, summary, description, requestedPriority } = req.body;
   if (!summary || !description || !categoryId || !relatedSystemId || !requestedPriority) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -113,17 +112,14 @@ app.post('/api/tickets', async (req, res) => {
         requesterId: Number(requesterId)
       }
     });
-
     res.status(201).json(ticket);
   } catch (error) {
-    console.error('Error creating ticket:', error);
     res.status(500).json({ error: 'Failed to create ticket' });
   }
 });
 
-app.get('/api/tickets', async (req, res) => {
-  const requesterId = req.headers['x-requester-id'];
-  if (!requesterId) return res.status(403).json({ error: 'Missing X-Requester-Id header' });
+app.get('/api/tickets', requireAuth, async (req, res) => {
+  const requesterId = (req as any).user.userId;
 
   try {
     const prisma = getPrisma();
@@ -134,13 +130,12 @@ app.get('/api/tickets', async (req, res) => {
     });
     res.status(200).json(tickets);
   } catch (error) {
-    console.error('Error fetching tickets:', error);
     res.status(500).json({ error: 'Failed to fetch tickets' });
   }
 });
 
-app.get('/api/tickets/:id', async (req, res) => {
-  const requesterId = Number(req.headers['x-requester-id']);
+app.get('/api/tickets/:id', requireAuth, async (req, res) => {
+  const requesterId = (req as any).user.userId;
   const ticketId = Number(req.params.id);
 
   try {
@@ -149,14 +144,20 @@ app.get('/api/tickets/:id', async (req, res) => {
       include: {
         category: true,
         relatedSystem: true,
-        requester: true,
-        attachments: true
+        requester: { select: { name: true, email: true } },
+        attachments: true,
+        // On inclut les commentaires publics avec leurs auteurs
+        comments: {
+          include: { author: { select: { name: true, role: true } } },
+          orderBy: { createdAt: 'asc' }
+        }
       }
     });
 
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
     
-    if (ticket.requesterId !== requesterId) {
+    // Le Requester A ne peut pas voir le ticket du Requester B
+    if ((req as any).user.role === 'Requester' && ticket.requesterId !== requesterId) {
       return res.status(403).json({ error: 'Access denied to this ticket' });
     }
 
@@ -166,8 +167,70 @@ app.get('/api/tickets/:id', async (req, res) => {
   }
 });
 
-app.post('/api/tickets/:id/attachments', upload.single('file'), async (req, res) => {
-  const requesterId = Number(req.headers['x-requester-id']);
+// --- NOUVEAU: Ajouter un commentaire public ---
+app.post('/api/tickets/:id/comments', requireAuth, async (req, res) => {
+  const userId = (req as any).user.userId;
+  const ticketId = Number(req.params.id);
+  const { text } = req.body;
+
+  // Rejeter les commentaires vides ou composés uniquement d'espaces
+  if (!text || text.trim().length === 0) {
+    return res.status(400).json({ error: 'Comment text cannot be empty' });
+  }
+
+  try {
+    const prisma = getPrisma();
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+
+    // Le Requester A ne peut pas commenter le ticket du Requester B
+    if ((req as any).user.role === 'Requester' && ticket.requesterId !== userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const comment = await prisma.publicComment.create({
+      data: {
+        text: text.trim(),
+        ticketId: ticketId,
+        authorId: userId
+      },
+      include: { author: { select: { name: true, role: true } } }
+    });
+
+    res.status(201).json(comment);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add comment' });
+  }
+});
+
+// --- NOUVEAU: Action "Problem Appears Resolved" ---
+app.patch('/api/tickets/:id/resolve', requireAuth, async (req, res) => {
+  const userId = (req as any).user.userId;
+  const ticketId = Number(req.params.id);
+
+  try {
+    const prisma = getPrisma();
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+    
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    if ((req as any).user.role === 'Requester' && ticket.requesterId !== userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { status: 'Resolved' }
+    });
+
+    res.json(updatedTicket);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to resolve ticket' });
+  }
+});
+
+// --- PIECES JOINTES (Sécurisées avec requireAuth) ---
+app.post('/api/tickets/:id/attachments', requireAuth, upload.single('file'), async (req, res) => {
+  const userId = (req as any).user.userId;
   const ticketId = Number(req.params.id);
 
   if (!req.file) return res.status(400).json({ error: 'No file uploaded or invalid format' });
@@ -175,7 +238,7 @@ app.post('/api/tickets/:id/attachments', upload.single('file'), async (req, res)
   try {
     const prisma = getPrisma();
     const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
-    if (!ticket || ticket.requesterId !== requesterId) {
+    if (!ticket || ((req as any).user.role === 'Requester' && ticket.requesterId !== userId)) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -193,8 +256,8 @@ app.post('/api/tickets/:id/attachments', upload.single('file'), async (req, res)
   }
 });
 
-app.get('/api/attachments/:id/download', async (req, res) => {
-  const requesterId = Number(req.headers['x-requester-id']);
+app.get('/api/attachments/:id/download', requireAuth, async (req, res) => {
+  const userId = (req as any).user.userId;
   
   try {
     const attachment = await getPrisma().attachment.findUnique({
@@ -203,8 +266,7 @@ app.get('/api/attachments/:id/download', async (req, res) => {
     });
 
     if (!attachment) return res.status(404).json({ error: 'Attachment not found' });
-    
-    if (attachment.ticket.requesterId !== requesterId || attachment.isRemoved) {
+    if (((req as any).user.role === 'Requester' && attachment.ticket.requesterId !== userId) || attachment.isRemoved) {
       return res.status(403).json({ error: 'Access denied or file removed' });
     }
 
@@ -214,8 +276,8 @@ app.get('/api/attachments/:id/download', async (req, res) => {
   }
 });
 
-app.delete('/api/attachments/:id', async (req, res) => {
-  const requesterId = Number(req.headers['x-requester-id']);
+app.delete('/api/attachments/:id', requireAuth, async (req, res) => {
+  const userId = (req as any).user.userId;
   
   try {
     const prisma = getPrisma();
@@ -224,7 +286,7 @@ app.delete('/api/attachments/:id', async (req, res) => {
       include: { ticket: true }
     });
 
-    if (!attachment || attachment.ticket.requesterId !== requesterId) {
+    if (!attachment || ((req as any).user.role === 'Requester' && attachment.ticket.requesterId !== userId)) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
