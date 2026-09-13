@@ -4,6 +4,7 @@ import Login from './Login';
 import ChangePassword from './ChangePassword';
 import CreateTicket from './CreateTicket';
 import MyTickets from './MyTickets';
+import StaffTicketQueue from './StaffTicketQueue';
 
 export default function App() {
   const { user, isLoading, logout } = useAuth();
@@ -83,9 +84,17 @@ export default function App() {
             <MyTickets />
           )
         ) : (
-          <div className="alert alert-info">
-            Welcome {user.name}! The IT Staff / Admin dashboard is not yet implemented.
-          </div>
+          <main className="container mt-4 mb-5">
+          {user.role === 'Requester' ? (
+            activeTab === 'create' ? (
+              <CreateTicket />
+            ) : (
+              <MyTickets />
+            )
+          ) : (
+            <StaffTicketQueue />
+          )}
+        </main>
         )}
       </main>
     </div>
