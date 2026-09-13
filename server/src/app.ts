@@ -228,6 +228,77 @@ app.patch('/api/tickets/:id/resolve', requireAuth, async (req, res) => {
   }
 });
 
+// --- NOUVEAU: IT Staff Ticket Queue ---
+app.get('/api/staff/tickets', requireAuth, async (req, res) => {
+  const userRole = (req as any).user.role;
+
+  // Sécurité : Interdit au rôle Requester
+  if (userRole === 'Requester') {
+    return res.status(403).json({ error: 'Access denied. IT Staff only.' });
+  }
+
+  try {
+    // Récupération des paramètres de l'URL (avec des valeurs par défaut)
+    const { 
+      search, 
+      status, 
+      priority, 
+      page = '1', 
+      limit = '10', 
+      sortField = 'createdAt', 
+      sortOrder = 'desc' 
+    } = req.query;
+
+    const prisma = getPrisma();
+
+    // 1. Construction dynamique des filtres (WHERE)
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { ticketNumber: { contains: String(search), mode: 'insensitive' } },
+        { summary: { contains: String(search), mode: 'insensitive' } }
+      ];
+    }
+    if (status) where.status = String(status);
+    if (priority) where.requestedPriority = String(priority);
+
+    // 2. Calcul de la pagination
+    const pageNumber = Math.max(1, Number(page));
+    const limitNumber = Math.max(1, Number(limit));
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // 3. Exécution de deux requêtes en parallèle : le compte total ET les tickets
+    const [total, tickets] = await Promise.all([
+      prisma.ticket.count({ where }),
+      prisma.ticket.findMany({
+        where,
+        include: {
+          category: { select: { name: true } },
+          requester: { select: { name: true } },
+          ticketOwner: { select: { name: true } }
+        },
+        orderBy: { [String(sortField)]: sortOrder === 'asc' ? 'asc' : 'desc' },
+        skip,
+        take: limitNumber
+      })
+    ]);
+
+    // 4. Réponse formatée
+    res.json({
+      data: tickets,
+      meta: {
+        total,
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: Math.ceil(total / limitNumber)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch staff tickets' });
+  }
+});
+
 // --- PIECES JOINTES (Sécurisées avec requireAuth) ---
 app.post('/api/tickets/:id/attachments', requireAuth, upload.single('file'), async (req, res) => {
   const userId = (req as any).user.userId;
