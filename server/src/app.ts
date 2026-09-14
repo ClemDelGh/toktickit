@@ -6,7 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
-import authRoutes from './routes/auth.js'; // Assure-toi de l'extension .ts ou .js selon ta config
+import authRoutes from './routes/auth.js'; 
 
 export const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-lab3-key';
@@ -42,14 +42,12 @@ const upload = multer({
 });
 
 // --- MIDDLEWARE D'AUTHENTIFICATION ---
-// Remplace le faux en-tête x-requester-id par la vraie session serveur
 const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   const token = req.cookies?.auth_token;
   if (!token) return res.status(401).json({ error: 'Not authenticated' });
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    // On attache les infos de l'utilisateur à la requête
     (req as any).user = decoded; 
     next();
   } catch (error) {
@@ -83,10 +81,12 @@ app.get('/api/related-systems', async (_req, res) => {
   }
 });
 
-// --- ROUTES PROTEGEES PAR requireAuth ---
+// ==========================================
+// --- ROUTES REQUESTER ---
+// ==========================================
 
 app.post('/api/tickets', requireAuth, async (req, res) => {
-  const requesterId = (req as any).user.userId; // L'identité vient de la session !
+  const requesterId = (req as any).user.userId;
   
   const { categoryId, relatedSystemId, summary, description, requestedPriority } = req.body;
   if (!summary || !description || !categoryId || !relatedSystemId || !requestedPriority) {
@@ -146,7 +146,6 @@ app.get('/api/tickets/:id', requireAuth, async (req, res) => {
         relatedSystem: true,
         requester: { select: { name: true, email: true } },
         attachments: true,
-        // On inclut les commentaires publics avec leurs auteurs
         comments: {
           include: { author: { select: { name: true, role: true } } },
           orderBy: { createdAt: 'asc' }
@@ -156,7 +155,6 @@ app.get('/api/tickets/:id', requireAuth, async (req, res) => {
 
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
     
-    // Le Requester A ne peut pas voir le ticket du Requester B
     if ((req as any).user.role === 'Requester' && ticket.requesterId !== requesterId) {
       return res.status(403).json({ error: 'Access denied to this ticket' });
     }
@@ -167,13 +165,11 @@ app.get('/api/tickets/:id', requireAuth, async (req, res) => {
   }
 });
 
-// --- NOUVEAU: Ajouter un commentaire public ---
 app.post('/api/tickets/:id/comments', requireAuth, async (req, res) => {
   const userId = (req as any).user.userId;
   const ticketId = Number(req.params.id);
   const { text } = req.body;
 
-  // Rejeter les commentaires vides ou composés uniquement d'espaces
   if (!text || text.trim().length === 0) {
     return res.status(400).json({ error: 'Comment text cannot be empty' });
   }
@@ -183,7 +179,6 @@ app.post('/api/tickets/:id/comments', requireAuth, async (req, res) => {
     const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
 
-    // Le Requester A ne peut pas commenter le ticket du Requester B
     if ((req as any).user.role === 'Requester' && ticket.requesterId !== userId) {
       return res.status(403).json({ error: 'Access denied' });
     }
@@ -203,7 +198,6 @@ app.post('/api/tickets/:id/comments', requireAuth, async (req, res) => {
   }
 });
 
-// --- NOUVEAU: Action "Problem Appears Resolved" ---
 app.patch('/api/tickets/:id/resolve', requireAuth, async (req, res) => {
   const userId = (req as any).user.userId;
   const ticketId = Number(req.params.id);
@@ -228,30 +222,20 @@ app.patch('/api/tickets/:id/resolve', requireAuth, async (req, res) => {
   }
 });
 
-// --- NOUVEAU: IT Staff Ticket Queue ---
+// ==========================================
+// --- ROUTES STAFF IT (Issues 15 & 16) ---
+// ==========================================
+
+// Issue 15: File d'attente
 app.get('/api/staff/tickets', requireAuth, async (req, res) => {
   const userRole = (req as any).user.role;
-
-  // Sécurité : Interdit au rôle Requester
   if (userRole === 'Requester') {
     return res.status(403).json({ error: 'Access denied. IT Staff only.' });
   }
 
   try {
-    // Récupération des paramètres de l'URL (avec des valeurs par défaut)
-    const { 
-      search, 
-      status, 
-      priority, 
-      page = '1', 
-      limit = '10', 
-      sortField = 'createdAt', 
-      sortOrder = 'desc' 
-    } = req.query;
-
+    const { search, status, priority, page = '1', limit = '10', sortField = 'createdAt', sortOrder = 'desc' } = req.query;
     const prisma = getPrisma();
-
-    // 1. Construction dynamique des filtres (WHERE)
     const where: any = {};
 
     if (search) {
@@ -263,12 +247,10 @@ app.get('/api/staff/tickets', requireAuth, async (req, res) => {
     if (status) where.status = String(status);
     if (priority) where.requestedPriority = String(priority);
 
-    // 2. Calcul de la pagination
     const pageNumber = Math.max(1, Number(page));
     const limitNumber = Math.max(1, Number(limit));
     const skip = (pageNumber - 1) * limitNumber;
 
-    // 3. Exécution de deux requêtes en parallèle : le compte total ET les tickets
     const [total, tickets] = await Promise.all([
       prisma.ticket.count({ where }),
       prisma.ticket.findMany({
@@ -284,7 +266,6 @@ app.get('/api/staff/tickets', requireAuth, async (req, res) => {
       })
     ]);
 
-    // 4. Réponse formatée
     res.json({
       data: tickets,
       meta: {
@@ -299,7 +280,99 @@ app.get('/api/staff/tickets', requireAuth, async (req, res) => {
   }
 });
 
-// --- PIECES JOINTES (Sécurisées avec requireAuth) ---
+// Issue 16: Récupérer un ticket avec ses notes internes
+app.get('/api/staff/tickets/:id', requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  if (user.role === 'Requester') {
+    return res.status(403).json({ error: 'Access denied. IT Staff only.' });
+  }
+  
+  try {
+    const ticket = await getPrisma().ticket.findUnique({
+      where: { id: Number(req.params.id) },
+      include: {
+        category: true,
+        relatedSystem: true,
+        requester: { select: { name: true, email: true } },
+        ticketOwner: { select: { name: true, email: true } },
+        attachments: { where: { isRemoved: false } },
+        comments: { include: { author: { select: { name: true, role: true } } }, orderBy: { createdAt: 'asc' } },
+        internalNotes: { include: { author: { select: { name: true, role: true } } }, orderBy: { createdAt: 'asc' } }
+      }
+    });
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    res.json(ticket);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Issue 16: Ajouter une note interne
+app.post('/api/staff/tickets/:id/notes', requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  if (user.role === 'Requester') {
+    return res.status(403).json({ error: 'Forbidden. Requesters cannot post or view internal notes.' });
+  }
+  
+  const { text } = req.body;
+  if (!text || !text.trim()) return res.status(400).json({ error: 'Note text is required' });
+
+  try {
+    const note = await getPrisma().internalNote.create({
+      data: {
+        text: text.trim(),
+        ticketId: Number(req.params.id),
+        authorId: user.userId
+      }
+    });
+    res.status(201).json(note);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add internal note' });
+  }
+});
+
+// Issue 16: Mettre à jour le ticket (Owner, Priority, Status)
+app.patch('/api/staff/tickets/:id', requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  if (user.role === 'Requester') return res.status(403).json({ error: 'Forbidden' });
+
+  const { status, itPriority, ticketOwnerId } = req.body;
+  const prisma = getPrisma();
+  
+  try {
+    const currentTicket = await prisma.ticket.findUnique({ where: { id: Number(req.params.id) } });
+    if (!currentTicket) return res.status(404).json({ error: 'Ticket not found' });
+
+    if (ticketOwnerId) {
+      const owner = await prisma.user.findUnique({ where: { id: ticketOwnerId } });
+      if (!owner || !owner.isActive || owner.role === 'Requester') {
+        return res.status(400).json({ error: 'Invalid ticket owner. Must be an active IT Staff or Admin.' });
+      }
+    }
+
+    const validStatuses = ['New', 'Open', 'InProgress', 'WaitingForRequester', 'Resolved', 'Closed', 'Reopened', 'Cancelled'];
+    if (status && !validStatuses.includes(status)) {
+        return res.status(400).json({ error: 'Invalid status provided.' });
+    }
+
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: Number(req.params.id) },
+      data: {
+        ...(status && { status }),
+        ...(itPriority && { itPriority }),
+        ...(ticketOwnerId !== undefined && { ticketOwnerId })
+      }
+    });
+    res.json(updatedTicket);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update ticket' });
+  }
+});
+
+// ==========================================
+// --- PIECES JOINTES ---
+// ==========================================
+
 app.post('/api/tickets/:id/attachments', requireAuth, upload.single('file'), async (req, res) => {
   const userId = (req as any).user.userId;
   const ticketId = Number(req.params.id);
