@@ -3,7 +3,6 @@ import { useAuth } from './contexts/AuthContext';
 
 interface ReferenceItem { id: number; name: string; }
 
-
 export default function CreateTicket() {
   const { user } = useAuth(); 
 
@@ -24,8 +23,10 @@ export default function CreateTicket() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/categories').then(res => res.json()),
-      fetch('/api/related-systems').then(res => res.json())
+      // AJOUT ICI : credentials: 'include'
+      fetch('/api/categories', { credentials: 'include' }).then(res => res.json()),
+      // AJOUT ICI : credentials: 'include'
+      fetch('/api/related-systems', { credentials: 'include' }).then(res => res.json())
     ]).then(([cats, sys]) => {
       setCategories(cats);
       setSystems(sys);
@@ -58,8 +59,8 @@ export default function CreateTicket() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-          // X-Requester-Id est supprimé ici aussi !
         },
+        credentials: 'include', // <-- AJOUT ICI : Le cookie magique !
         body: JSON.stringify({
           categoryId: Number(categoryId),
           relatedSystemId: Number(systemId),

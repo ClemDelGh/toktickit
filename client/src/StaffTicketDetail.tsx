@@ -45,7 +45,8 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
   const [newNote, setNewNote] = useState('');
 
   const fetchTicket = () => {
-    fetch(`/api/staff/tickets/${ticketId}`)
+    // AJOUT ICI
+    fetch(`/api/staff/tickets/${ticketId}`, { credentials: 'include' })
       .then(res => res.ok ? res.json() : Promise.reject('Failed to load'))
       .then(data => { 
         setTicket(data); 
@@ -65,6 +66,7 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
       const res = await fetch(`/api/staff/tickets/${ticketId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // AJOUT ICI
         body: JSON.stringify({ status, itPriority: itPriority || null })
       });
       if (!res.ok) throw new Error();
@@ -89,6 +91,7 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
       const res = await fetch(`/api/staff/tickets/${ticketId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // AJOUT ICI
         body: JSON.stringify({ ticketOwnerId: Number(currentUserId) })
       });
       if (!res.ok) throw new Error();
@@ -105,6 +108,7 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
       const res = await fetch(`/api/tickets/${ticketId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // AJOUT ICI
         body: JSON.stringify({ text: newComment })
       });
       if (!res.ok) throw new Error();
@@ -122,6 +126,7 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
       const res = await fetch(`/api/staff/tickets/${ticketId}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // AJOUT ICI
         body: JSON.stringify({ text: newNote })
       });
       if (!res.ok) throw new Error();
@@ -187,7 +192,7 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
             <div className="p-3 bg-white border rounded mb-4 d-flex justify-content-between align-items-center">
               <span className="fw-bold">{ticket.ticketOwner ? ticket.ticketOwner.name : 'Unassigned'}</span>
               {!ticket.ticketOwner && (
-                <button className="btn btn-sm btn-outline-primary" onClick={handleClaimTicket}>Claim Ticket</button>
+                <button type="button" className="btn btn-sm btn-outline-primary" onClick={handleClaimTicket}>Claim Ticket</button>
               )}
             </div>
             

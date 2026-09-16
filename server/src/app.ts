@@ -1,16 +1,17 @@
-import express, { Request, Response, NextFunction } from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import { getPrisma } from "./prisma.js";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import cookieParser from 'cookie-parser';
-import jwt from 'jsonwebtoken';
 import authRoutes from './routes/auth.js'; 
 import bcrypt from 'bcrypt';
 
+// --- IMPORT DE NOS NOUVEAUX MIDDLEWARES ---
+import { requireAuth, requireRole } from './middleware/authMiddleware.js';
+
 export const app = express();
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-lab3-key';
 
 app.use(cors());        
 app.use(express.json());
@@ -41,20 +42,6 @@ const upload = multer({
     }
   }
 });
-
-// --- MIDDLEWARE D'AUTHENTIFICATION ---
-const requireAuth = (req: Request, res: Response, next: NextFunction) => {
-  const token = req.cookies?.auth_token;
-  if (!token) return res.status(401).json({ error: 'Not authenticated' });
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    (req as any).user = decoded; 
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
-  }
-};
 
 app.get("/api/health", (_req: Request, res: Response) => {
   res.status(200).json({ status : "ok", service : "TokTickIT API" });
@@ -227,13 +214,8 @@ app.patch('/api/tickets/:id/resolve', requireAuth, async (req, res) => {
 // --- ROUTES STAFF IT (Issues 15 & 16) ---
 // ==========================================
 
-// Issue 15: File d'attente
-app.get('/api/staff/tickets', requireAuth, async (req, res) => {
-  const userRole = (req as any).user.role;
-  if (userRole === 'Requester') {
-    return res.status(403).json({ error: 'Access denied. IT Staff only.' });
-  }
-
+// Issue 15: File d'attente (Staff & Admin)
+app.get('/api/staff/tickets', requireAuth, requireRole(['ITStaff', 'Administrator']), async (req, res) => {
   try {
     const { search, status, priority, page = '1', limit = '10', sortField = 'createdAt', sortOrder = 'desc' } = req.query;
     const prisma = getPrisma();
@@ -281,13 +263,8 @@ app.get('/api/staff/tickets', requireAuth, async (req, res) => {
   }
 });
 
-// Issue 16: Récupérer un ticket avec ses notes internes
-app.get('/api/staff/tickets/:id', requireAuth, async (req, res) => {
-  const user = (req as any).user;
-  if (user.role === 'Requester') {
-    return res.status(403).json({ error: 'Access denied. IT Staff only.' });
-  }
-  
+// Issue 16: Récupérer un ticket avec ses notes internes (Staff & Admin)
+app.get('/api/staff/tickets/:id', requireAuth, requireRole(['ITStaff', 'Administrator']), async (req, res) => {
   try {
     const ticket = await getPrisma().ticket.findUnique({
       where: { id: Number(req.params.id) },
@@ -308,13 +285,9 @@ app.get('/api/staff/tickets/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Issue 16: Ajouter une note interne
-app.post('/api/staff/tickets/:id/notes', requireAuth, async (req, res) => {
+// Issue 16: Ajouter une note interne (Staff & Admin)
+app.post('/api/staff/tickets/:id/notes', requireAuth, requireRole(['ITStaff', 'Administrator']), async (req, res) => {
   const user = (req as any).user;
-  if (user.role === 'Requester') {
-    return res.status(403).json({ error: 'Forbidden. Requesters cannot post or view internal notes.' });
-  }
-  
   const { text } = req.body;
   if (!text || !text.trim()) return res.status(400).json({ error: 'Note text is required' });
 
@@ -332,11 +305,8 @@ app.post('/api/staff/tickets/:id/notes', requireAuth, async (req, res) => {
   }
 });
 
-// Issue 16: Mettre à jour le ticket (Owner, Priority, Status)
-app.patch('/api/staff/tickets/:id', requireAuth, async (req, res) => {
-  const user = (req as any).user;
-  if (user.role === 'Requester') return res.status(403).json({ error: 'Forbidden' });
-
+// Issue 16: Mettre à jour le ticket (Staff & Admin)
+app.patch('/api/staff/tickets/:id', requireAuth, requireRole(['ITStaff', 'Administrator']), async (req, res) => {
   const { status, itPriority, ticketOwnerId } = req.body;
   const prisma = getPrisma();
   
@@ -446,12 +416,11 @@ app.delete('/api/attachments/:id', requireAuth, async (req, res) => {
   }
 }); 
 
-app.get('/api/users', requireAuth, async (req, res) => {
-  const user = (req as any).user;
-  if (user.role !== 'Administrator') {
-    return res.status(403).json({ error: 'Forbidden: Administrators only.' });
-  }
+// ==========================================
+// --- ROUTES ADMIN (Issue 17) ---
+// ==========================================
 
+app.get('/api/users', requireAuth, requireRole(['Administrator']), async (req, res) => {
   try {
     const { search, role } = req.query;
     const where: any = {};
@@ -478,9 +447,7 @@ app.get('/api/users', requireAuth, async (req, res) => {
   }
 });
 
-app.post('/api/users', requireAuth, async (req, res) => {
-  if ((req as any).user.role !== 'Administrator') return res.status(403).json({ error: 'Forbidden' });
-
+app.post('/api/users', requireAuth, requireRole(['Administrator']), async (req, res) => {
   const { name, email, role, isActive, initialPassword } = req.body;
 
   try {
@@ -510,10 +477,8 @@ app.post('/api/users', requireAuth, async (req, res) => {
   }
 });
 
-app.patch('/api/users/:id', requireAuth, async (req, res) => {
+app.patch('/api/users/:id', requireAuth, requireRole(['Administrator']), async (req, res) => {
   const adminId = (req as any).user.userId;
-  if ((req as any).user.role !== 'Administrator') return res.status(403).json({ error: 'Forbidden' });
-
   const targetId = Number(req.params.id);
   const { name, email, role, isActive } = req.body;
   const prisma = getPrisma();
@@ -554,9 +519,7 @@ app.patch('/api/users/:id', requireAuth, async (req, res) => {
   }
 });
 
-app.post('/api/users/:id/reset-password', requireAuth, async (req, res) => {
-  if ((req as any).user.role !== 'Administrator') return res.status(403).json({ error: 'Forbidden' });
-  
+app.post('/api/users/:id/reset-password', requireAuth, requireRole(['Administrator']), async (req, res) => {
   const targetId = Number(req.params.id);
   const { initialPassword } = req.body;
 

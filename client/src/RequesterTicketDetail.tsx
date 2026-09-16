@@ -42,8 +42,8 @@ export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
   const [resolving, setResolving] = useState(false);
 
   const fetchTicket = () => {
-    // PLUS DE HEADERS, PLUS DE LOCALHOST !
-    fetch(`/api/tickets/${ticketId}`)
+    // AJOUT ICI
+    fetch(`/api/tickets/${ticketId}`, { credentials: 'include' })
       .then(res => res.ok ? res.json() : Promise.reject('Failed to load'))
       .then(data => { setTicket(data); setLoading(false); })
       .catch(() => { setError('Error loading ticket details'); setLoading(false); });
@@ -70,6 +70,7 @@ export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
     try {
       const res = await fetch(`/api/tickets/${ticketId}/attachments`, {
         method: 'POST',
+        credentials: 'include', // AJOUT ICI
         body: formData
       });
       
@@ -85,7 +86,8 @@ export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
 
   const handleDownload = async (attachmentId: number, filename: string) => {
     try {
-      const res = await fetch(`/api/attachments/${attachmentId}/download`);
+      // AJOUT ICI
+      const res = await fetch(`/api/attachments/${attachmentId}/download`, { credentials: 'include' });
       if (!res.ok) throw new Error();
       
       const blob = await res.blob();
@@ -106,7 +108,8 @@ export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
     
     try {
       const res = await fetch(`/api/attachments/${attachmentId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include' // AJOUT ICI
       });
       if (!res.ok) throw new Error();
       fetchTicket();
@@ -125,6 +128,7 @@ export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
       const res = await fetch(`/api/tickets/${ticketId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // AJOUT ICI
         body: JSON.stringify({ text: newComment.trim() })
       });
       if (!res.ok) throw new Error();
@@ -143,7 +147,8 @@ export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
     setResolving(true);
     try {
       const res = await fetch(`/api/tickets/${ticketId}/resolve`, {
-        method: 'PATCH'
+        method: 'PATCH',
+        credentials: 'include' // AJOUT ICI
       });
       if (!res.ok) throw new Error();
       fetchTicket();
@@ -281,10 +286,10 @@ export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
                     </span>
                     {!att.isRemoved && (
                       <div className="text-nowrap">
-                        <button className="btn btn-sm btn-link text-success p-0 me-2" onClick={() => handleDownload(att.id, att.originalName)}>
+                        <button type="button" className="btn btn-sm btn-link text-success p-0 me-2" onClick={() => handleDownload(att.id, att.originalName)}>
                           ↓
                         </button>
-                        <button className="btn btn-sm btn-link text-danger p-0" onClick={() => handleRemove(att.id)}>
+                        <button type="button" className="btn btn-sm btn-link text-danger p-0" onClick={() => handleRemove(att.id)}>
                           ✕
                         </button>
                       </div>
