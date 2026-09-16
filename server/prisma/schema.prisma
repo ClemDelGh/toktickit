@@ -26,7 +26,6 @@ enum TicketStatus {
   Cancelled
 }
 
-
 model Category {
   id        Int      @id @default(autoincrement())
   name      String   @unique
@@ -44,53 +43,55 @@ model User {
   mustChangePassword Boolean  @default(true)
   createdAt          DateTime @default(now())
 
-  submittedTickets   Ticket[] @relation("TicketRequester")
-  ownedTickets       Ticket[] @relation("TicketOwner")
-  comments PublicComment[]
+  submittedTickets Ticket[]        @relation("TicketRequester")
+  ownedTickets     Ticket[]        @relation("TicketOwner")
+  comments         PublicComment[]
+  internalNotes    InternalNote[]
 }
 
 model RelatedSystem {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  isActive  Boolean  @default(true)
-  tickets   Ticket[]
+  id       Int      @id @default(autoincrement())
+  name     String   @unique
+  isActive Boolean  @default(true)
+  tickets  Ticket[]
 }
 
 model Ticket {
-  id                Int      @id @default(autoincrement())
-  ticketNumber      String   @unique 
+  id                Int          @id @default(autoincrement())
+  ticketNumber      String       @unique
   summary           String
   description       String
-  requestedPriority String   
-  itPriority        String? 
+  requestedPriority String
+  itPriority        String?
   status            TicketStatus @default(New)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
-  requesterId       Int
-  requester         User     @relation("TicketRequester", fields: [requesterId], references: [id])
+  requesterId Int
+  requester   User @relation("TicketRequester", fields: [requesterId], references: [id])
 
-  ticketOwnerId     Int?
-  ticketOwner       User?    @relation("TicketOwner", fields: [ticketOwnerId], references: [id])
-  
-  categoryId        Int
-  category          Category @relation(fields: [categoryId], references: [id])
-  relatedSystemId   Int
-  relatedSystem     RelatedSystem @relation(fields: [relatedSystemId], references: [id])
-  
-  attachments       Attachment[]
-  comments PublicComment[]
+  ticketOwnerId Int?
+  ticketOwner   User? @relation("TicketOwner", fields: [ticketOwnerId], references: [id])
+
+  categoryId      Int
+  category        Category      @relation(fields: [categoryId], references: [id])
+  relatedSystemId Int
+  relatedSystem   RelatedSystem @relation(fields: [relatedSystemId], references: [id])
+
+  attachments   Attachment[]
+  comments      PublicComment[]
+  internalNotes InternalNote[]
 }
 
 model Attachment {
   id           Int      @id @default(autoincrement())
   originalName String
   storagePath  String
-  isRemoved    Boolean  @default(false) 
+  isRemoved    Boolean  @default(false)
   createdAt    DateTime @default(now())
 
-  ticketId     Int
-  ticket       Ticket   @relation(fields: [ticketId], references: [id])
+  ticketId Int
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
 }
 
 model PublicComment {
@@ -99,9 +100,21 @@ model PublicComment {
   createdAt DateTime @default(now())
 
   // Relations
-  authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
-  
-  ticketId  Int
-  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id])
+
+  ticketId Int
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+}
+
+model InternalNote {
+  id        Int      @id @default(autoincrement())
+  text      String
+  createdAt DateTime @default(now())
+
+  ticketId Int
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id])
 }

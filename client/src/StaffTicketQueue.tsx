@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import StaffTicketDetail from './StaffTicketDetail'; // <-- IMPORT AJOUTÉ
 
 interface Ticket {
   id: number;
@@ -20,6 +21,9 @@ interface Meta {
 }
 
 export default function StaffTicketQueue() {
+  // <-- NOUVEL ÉTAT POUR MÉMORISER LE TICKET SÉLECTIONNÉ
+  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
+  
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [meta, setMeta] = useState<Meta | null>(null);
   
@@ -66,10 +70,12 @@ export default function StaffTicketQueue() {
       });
   };
 
-  // Recharger dès qu'un filtre, le tri ou la page change
   useEffect(() => {
-    fetchTickets();
-  }, [search, status, priority, page, sortField, sortOrder]);
+    // Si on est sur la file d'attente (pas de ticket sélectionné), on charge les données
+    if (!selectedTicketId) {
+      fetchTickets();
+    }
+  }, [search, status, priority, page, sortField, sortOrder, selectedTicketId]);
 
   // Gérer le changement de tri
   const handleSort = (field: string) => {
@@ -89,6 +95,11 @@ export default function StaffTicketQueue() {
   };
 
   if (error) return <div className="alert alert-danger mt-4">{error}</div>;
+
+  // <-- SI UN TICKET EST SÉLECTIONNÉ, ON AFFICHE LE DÉTAIL AU LIEU DE LA FILE D'ATTENTE
+  if (selectedTicketId) {
+    return <StaffTicketDetail ticketId={selectedTicketId} onBack={() => setSelectedTicketId(null)} />;
+  }
 
   return (
     <div className="card shadow-sm mt-4 mb-5">
@@ -154,7 +165,8 @@ export default function StaffTicketQueue() {
                     <p className="mb-1 small">Requester: {t.requester.name}</p>
                     <div className="d-flex justify-content-between align-items-center mt-2">
                        <span className={`badge bg-${t.requestedPriority === 'High' ? 'danger' : 'warning'}`}>{t.requestedPriority}</span>
-                       <button className="btn btn-sm btn-primary">Open</button>
+                       {/* <-- BOUTON OPEN CONNECTÉ */}
+                       <button className="btn btn-sm btn-primary" onClick={() => setSelectedTicketId(t.id)}>Open</button>
                     </div>
                   </div>
                 </div>
@@ -198,7 +210,8 @@ export default function StaffTicketQueue() {
                       </td>
                       <td><span className="badge bg-secondary">{t.status}</span></td>
                       <td>{new Date(t.createdAt).toLocaleDateString()}</td>
-                      <td><button className="btn btn-sm btn-primary">Open</button></td>
+                      {/* <-- BOUTON OPEN CONNECTÉ */}
+                      <td><button className="btn btn-sm btn-primary" onClick={() => setSelectedTicketId(t.id)}>Open</button></td>
                     </tr>
                   ))}
                 </tbody>
