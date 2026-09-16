@@ -7,6 +7,7 @@ import fs from 'fs';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import authRoutes from './routes/auth.js'; 
+import bcrypt from 'bcrypt';
 
 export const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-lab3-key';
@@ -444,5 +445,136 @@ app.delete('/api/attachments/:id', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Failed to remove attachment' });
   }
 }); 
+
+app.get('/api/users', requireAuth, async (req, res) => {
+  const user = (req as any).user;
+  if (user.role !== 'Administrator') {
+    return res.status(403).json({ error: 'Forbidden: Administrators only.' });
+  }
+
+  try {
+    const { search, role } = req.query;
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: String(search), mode: 'insensitive' } },
+        { email: { contains: String(search), mode: 'insensitive' } }
+      ];
+    }
+    if (role) {
+      where.role = String(role);
+    }
+
+    const users = await getPrisma().user.findMany({
+      where,
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, email: true, role: true, isActive: true, mustChangePassword: true }
+    });
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+app.post('/api/users', requireAuth, async (req, res) => {
+  if ((req as any).user.role !== 'Administrator') return res.status(403).json({ error: 'Forbidden' });
+
+  const { name, email, role, isActive, initialPassword } = req.body;
+
+  try {
+    const prisma = getPrisma();
+    const existingEmail = await prisma.user.findUnique({ where: { email } });
+    if (existingEmail) {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+
+    const passwordHash = await bcrypt.hash(initialPassword, 10);
+    
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        role,
+        isActive: isActive ?? true,
+        passwordHash,
+        mustChangePassword: true 
+      },
+      select: { id: true, name: true, email: true, role: true, isActive: true }
+    });
+
+    res.status(201).json(newUser);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+app.patch('/api/users/:id', requireAuth, async (req, res) => {
+  const adminId = (req as any).user.userId;
+  if ((req as any).user.role !== 'Administrator') return res.status(403).json({ error: 'Forbidden' });
+
+  const targetId = Number(req.params.id);
+  const { name, email, role, isActive } = req.body;
+  const prisma = getPrisma();
+
+  try {
+    const targetUser = await prisma.user.findUnique({ where: { id: targetId } });
+    if (!targetUser) return res.status(404).json({ error: 'User not found' });
+
+    if (email && email !== targetUser.email) {
+      const existingEmail = await prisma.user.findUnique({ where: { email } });
+      if (existingEmail) return res.status(409).json({ error: 'Email already exists' });
+    }
+
+    if (isActive === false && targetUser.isActive === true) {
+      if (targetId === adminId) {
+        return res.status(400).json({ error: 'You cannot deactivate your own account.' });
+      }
+      
+      if (targetUser.role === 'Administrator') {
+        const activeAdmins = await prisma.user.count({
+          where: { role: 'Administrator', isActive: true }
+        });
+        if (activeAdmins <= 1) {
+          return res.status(400).json({ error: 'Cannot deactivate the last active administrator.' });
+        }
+      }
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: targetId },
+      data: { name, email, role, isActive },
+      select: { id: true, name: true, email: true, role: true, isActive: true }
+    });
+
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+app.post('/api/users/:id/reset-password', requireAuth, async (req, res) => {
+  if ((req as any).user.role !== 'Administrator') return res.status(403).json({ error: 'Forbidden' });
+  
+  const targetId = Number(req.params.id);
+  const { initialPassword } = req.body;
+
+  try {
+    const passwordHash = await bcrypt.hash(initialPassword, 10);
+    
+    await getPrisma().user.update({
+      where: { id: targetId },
+      data: { 
+        passwordHash, 
+        mustChangePassword: true 
+      }
+    });
+
+    res.json({ message: 'Initial password reset successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
 
 export default app;

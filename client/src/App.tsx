@@ -5,6 +5,7 @@ import ChangePassword from './ChangePassword';
 import CreateTicket from './CreateTicket';
 import MyTickets from './MyTickets';
 import StaffTicketQueue from './StaffTicketQueue';
+import UserManagement from './UserManagement'; // Ajout de l'import
 
 export default function App() {
   const { user, isLoading, logout } = useAuth();
@@ -77,24 +78,17 @@ export default function App() {
       )}
 
       <main className="container mt-4 mb-5">
-        {user.role === 'Requester' ? (
-          activeTab === 'create' ? (
-            <CreateTicket />
-          ) : (
-            <MyTickets />
-          )
-        ) : (
-          <main className="container mt-4 mb-5">
-          {user.role === 'Requester' ? (
-            activeTab === 'create' ? (
-              <CreateTicket />
-            ) : (
-              <MyTickets />
-            )
-          ) : (
-            <StaffTicketQueue />
-          )}
-        </main>
+        {/* Rendu conditionnel basé sur le rôle de l'utilisateur */}
+        {user.role === 'Requester' && (
+          activeTab === 'create' ? <CreateTicket /> : <MyTickets />
+        )}
+        
+        {user.role === 'IT Staff' && (
+          <StaffTicketQueue />
+        )}
+
+        {user.role === 'Administrator' && (
+          <UserManagement />
         )}
       </main>
     </div>

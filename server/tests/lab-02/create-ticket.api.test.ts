@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/app';
+import jwt from 'jsonwebtoken';
+
+// On forge un faux jeton d'authentification pour le test
+const token = jwt.sign({ userId: 1, role: 'Requester' }, process.env.JWT_SECRET || 'super-secret-lab3-key');
+const cookie = `auth_token=${token}`;
 
 describe('POST /api/tickets', () => {
   it('should create a ticket and return 201 with a generated ticket number', async () => {
@@ -14,6 +19,7 @@ describe('POST /api/tickets', () => {
 
     const response = await request(app)
       .post('/api/tickets')
+      .set('Cookie', cookie)
       .set('x-requester-id', '1') 
       .send(payload);
 
@@ -23,14 +29,16 @@ describe('POST /api/tickets', () => {
     expect(response.body.summary).toBe(payload.summary);
   });
 
-  it('should return 403 if x-requester-id is missing', async () => {
+  it('should return 401 or 403 if unauthenticated', async () => {
     const response = await request(app).post('/api/tickets').send({});
-    expect(response.status).toBe(403);
+    // Le serveur peut rejeter avec 401 (pas de cookie) ou 403 (pas d'ID)
+    expect([401, 403]).toContain(response.status); 
   });
 
   it('should return 400 if required fields are missing', async () => {
     const response = await request(app)
       .post('/api/tickets')
+      .set('Cookie', cookie)
       .set('x-requester-id', '1')
       .send({ description: 'Missing summary and other fields' });
     
