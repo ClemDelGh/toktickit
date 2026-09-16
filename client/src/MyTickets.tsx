@@ -21,7 +21,8 @@ export default function MyTickets() {
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch('/api/tickets')
+    // AJOUT ICI : { credentials: 'include' }
+    fetch('/api/tickets', { credentials: 'include' })
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch tickets');
         return res.json();

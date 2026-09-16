@@ -24,7 +24,9 @@ export default function UserManagement() {
     if (search) params.append('search', search);
     if (roleFilter) params.append('role', roleFilter);
 
-    fetch(`/api/users?${params.toString()}`)
+    fetch(`/api/users?${params.toString()}`, { 
+      credentials: 'include' // <-- AJOUT ICI
+    })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setUsers(data);
@@ -45,7 +47,8 @@ export default function UserManagement() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
+        credentials: 'include' // <-- AJOUT ICI
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur lors de la sauvegarde');
@@ -76,7 +79,8 @@ export default function UserManagement() {
       const res = await fetch(`/api/users/${passwordResetData.id}/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initialPassword: passwordResetData.newPassword })
+        body: JSON.stringify({ initialPassword: passwordResetData.newPassword }),
+        credentials: 'include' // <-- AJOUT ICI
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);

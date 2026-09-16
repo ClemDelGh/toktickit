@@ -5,7 +5,7 @@ import ChangePassword from './ChangePassword';
 import CreateTicket from './CreateTicket';
 import MyTickets from './MyTickets';
 import StaffTicketQueue from './StaffTicketQueue';
-import UserManagement from './UserManagement'; // Ajout de l'import
+import UserManagement from './UserManagement';
 
 export default function App() {
   const { user, isLoading, logout } = useAuth();
@@ -83,7 +83,7 @@ export default function App() {
           activeTab === 'create' ? <CreateTicket /> : <MyTickets />
         )}
         
-        {user.role === 'IT Staff' && (
+        {user.role === 'ITStaff' && (
           <StaffTicketQueue />
         )}
 

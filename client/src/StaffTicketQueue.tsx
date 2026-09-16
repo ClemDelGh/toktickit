@@ -54,7 +54,8 @@ export default function StaffTicketQueue() {
     if (status) params.append('status', status);
     if (priority) params.append('priority', priority);
 
-    fetch(`/api/staff/tickets?${params.toString()}`)
+    // AJOUT ICI : { credentials: 'include' }
+    fetch(`/api/staff/tickets?${params.toString()}`, { credentials: 'include' })
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch queue');
         return res.json();
