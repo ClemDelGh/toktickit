@@ -66,8 +66,9 @@ export default function ChangePassword() {
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label className="form-label text-muted small fw-bold">Current Password</label>
+            <label htmlFor="currentPassword" className="form-label text-muted small fw-bold">Current Password</label>
             <input
+              id="currentPassword"
               type="password"
               className="form-control"
               value={currentPassword}
@@ -78,8 +79,9 @@ export default function ChangePassword() {
           </div>
           
           <div className="mb-3">
-            <label className="form-label text-muted small fw-bold">New Password</label>
+            <label htmlFor="newPassword" className="form-label text-muted small fw-bold">New Password</label>
             <input
+              id="newPassword"
               type="password"
               className="form-control"
               value={newPassword}
@@ -91,8 +93,9 @@ export default function ChangePassword() {
           </div>
 
           <div className="mb-4">
-            <label className="form-label text-muted small fw-bold">Confirm New Password</label>
+            <label htmlFor="confirmPassword" className="form-label text-muted small fw-bold">Confirm New Password</label>
             <input
+              id="confirmPassword"
               type="password"
               className="form-control"
               value={confirmPassword}
