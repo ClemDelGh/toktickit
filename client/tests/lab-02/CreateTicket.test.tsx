@@ -3,6 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import CreateTicket from '../../src/CreateTicket';
 
+// On simule un utilisateur connecté pour que le composant ne plante pas
+vi.mock('../../src/contexts/AuthContext', () => ({
+  useAuth: () => ({ 
+    user: { userId: 1, name: 'Test Requester', role: 'Requester' },
+    logout: vi.fn()
+  })
+}));
+
 global.fetch = vi.fn();
 
 describe('CreateTicket Component', () => {

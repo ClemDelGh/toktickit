@@ -1,20 +1,32 @@
 import { useState } from 'react';
-import RequesterSelector from './RequesterSelector';
+import { useAuth } from './contexts/AuthContext';
+import Login from './Login';
+import ChangePassword from './ChangePassword';
 import CreateTicket from './CreateTicket';
 import MyTickets from './MyTickets';
-
-interface Requester {
-  id: number;
-  name: string;
-  email: string;
-}
+import StaffTicketQueue from './StaffTicketQueue';
+import UserManagement from './UserManagement';
 
 export default function App() {
-  const [currentRequester, setCurrentRequester] = useState<Requester | null>(null);
+  const { user, isLoading, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'create' | 'list'>('create');
 
-  if (!currentRequester) {
-    return <RequesterSelector onSelect={setCurrentRequester} />;
+  if (isLoading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border" style={{ color: '#006B3C' }} role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login />;
+  }
+
+  if (user.mustChangePassword) {
+    return <ChangePassword />;
   }
 
   return (
@@ -25,47 +37,58 @@ export default function App() {
             TokTickIT
           </span>
           <div className="d-flex align-items-center text-white">
-            <span className="me-4 d-flex align-items-center">
-               <span className="me-2"></span> Profile: {currentRequester.name}
+            <span className="me-4 d-flex flex-column" style={{ fontSize: '0.9rem' }}>
+               <span className="fw-bold">{user.name}</span>
+               <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>Role: {user.role}</span>
             </span>
             <button 
               className="btn btn-sm btn-outline-light" 
-              onClick={() => setCurrentRequester(null)}
+              onClick={logout}
             >
-              Change Requester
+              Logout
             </button>
           </div>
         </div>
       </nav>
 
-      <div className="bg-light border-bottom py-2">
-        <div className="container">
-          <div className="btn-group" role="group">
-            <button 
-              type="button" 
-              className={`btn btn-sm ${activeTab === 'create' ? 'text-white' : 'btn-outline-success'}`}
-              style={{ backgroundColor: activeTab === 'create' ? '#006B3C' : 'transparent', borderColor: '#006B3C' }}
-              onClick={() => setActiveTab('create')}
-            >
-              Create Ticket
-            </button>
-            <button 
-              type="button" 
-              className={`btn btn-sm ${activeTab === 'list' ? 'text-white' : 'btn-outline-success'}`}
-              style={{ backgroundColor: activeTab === 'list' ? '#006B3C' : 'transparent', borderColor: '#006B3C' }}
-              onClick={() => setActiveTab('list')}
-            >
-              My Tickets
-            </button>
+      {/* Barre de navigation interne, affichée uniquement pour le rôle Requester pour le moment */}
+      {user.role === 'Requester' && (
+        <div className="bg-light border-bottom py-2">
+          <div className="container">
+            <div className="btn-group" role="group">
+              <button 
+                type="button" 
+                className={`btn btn-sm ${activeTab === 'create' ? 'text-white' : 'btn-outline-success'}`}
+                style={{ backgroundColor: activeTab === 'create' ? '#006B3C' : 'transparent', borderColor: '#006B3C' }}
+                onClick={() => setActiveTab('create')}
+              >
+                Create Ticket
+              </button>
+              <button 
+                type="button" 
+                className={`btn btn-sm ${activeTab === 'list' ? 'text-white' : 'btn-outline-success'}`}
+                style={{ backgroundColor: activeTab === 'list' ? '#006B3C' : 'transparent', borderColor: '#006B3C' }}
+                onClick={() => setActiveTab('list')}
+              >
+                My Tickets
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <main className="container mt-4 mb-5">
-        {activeTab === 'create' ? (
-          <CreateTicket requester={currentRequester} />
-        ) : (
-          <MyTickets requester={currentRequester} />
+        {/* Rendu conditionnel basé sur le rôle de l'utilisateur */}
+        {user.role === 'Requester' && (
+          activeTab === 'create' ? <CreateTicket /> : <MyTickets />
+        )}
+        
+        {user.role === 'ITStaff' && (
+          <StaffTicketQueue />
+        )}
+
+        {user.role === 'Administrator' && (
+          <UserManagement />
         )}
       </main>
     </div>
