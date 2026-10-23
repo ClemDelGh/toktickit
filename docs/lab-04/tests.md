@@ -20,27 +20,27 @@ Paths: `S/` = `server/tests/lab-04/`, `C/` = `client/tests/lab-04/`, `E/` = `e2e
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | UNIT-01 | AC-10 | Unit | Transition matrix, table-driven over all 56 ordered status pairs | Exactly the 21 allowed pairs of BR-11 return allowed; same-status is not a transition | `S/workflow-rules.unit.test.ts` | Pending |
 | UNIT-02 | AC-11 | Unit | Resolution-gate evaluator for every combination of G1–G4 | Returns exactly the missing blockers (`NO_OWNER`, `NO_ACTIONS`, `OPEN_FOLLOW_UP`, `NO_RESOLUTION_SUMMARY`); empty when satisfied | `S/workflow-rules.unit.test.ts` | Pending |
-| UNIT-03 | AC-02 | Unit | Action validator: trimming, length limits, date bounds (future +5 min, before ticket creation), follow-up rule | Field errors per BR-04/05; follow-up note normalised to null | `S/validators.unit.test.ts` | Pending |
+| UNIT-03 | AC-02 | Unit | Action validator: trimming, length limits, date bounds (future +5 min, before ticket creation), follow-up rule | Field errors per BR-04/05; follow-up note normalised to null | `S/validators.unit.test.ts` | Pass |
 | UNIT-04 | AC-24 | Unit | Query-parameter parser: `sortField` whitelist, `limit` 1–100, `page` ≥ 1, status list, `owner`, `itPriority` | Valid values parsed; invalid values produce `VALIDATION_ERROR` | `S/validators.unit.test.ts` | Pending |
 
 ### 2.2 API — Actions Taken (`S/actions-taken.api.test.ts`)
 | Test ID | AC | Type | What It Tests | Expected Result | Final |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| API-01 | AC-01 | API | IT Staff creates a valid Action | 201; saved under the right Ticket; `performedBy` = session user; `version` = 1 | Pending |
-| API-02 | AC-01 | API | Body contains a different `performedById` | Ignored; performer is the authenticated user | Pending |
-| API-03 | AC-02 | API | Validation matrix: blank description, blank result, over-length fields, invalid/future/pre-creation date, follow-up required without note | Each → 400 `VALIDATION_ERROR` with `fieldErrors`; no row created | Pending |
-| API-04 | AC-02 | API | `followUpRequired=false` with a note supplied | 201; `followUpNote` stored as null | Pending |
-| API-05 | AC-03 | API | IT Staff B records an Action on A's Ticket | 201; performer B; `ticketOwnerId` unchanged | Pending |
-| API-06 | AC-04 | API | Edit with current `expectedVersion` | 200; `version`+1; `lastEditedBy` set; performer unchanged | Pending |
-| API-07 | AC-04 | API | Edit with stale `expectedVersion` | 409 `STALE_UPDATE` with `current`; data not overwritten | Pending |
-| API-08 | AC-09 | API | Mark follow-up completed; same on an Action without follow-up | `followUpCompletedAt` set; second case 400 | Pending |
-| API-09 | AC-05 | API | Owner Requester lists Actions; tries POST and PATCH | List 200 (all fields); write attempts 403 | Pending |
-| API-10 | AC-05 | API | Requester B lists Actions of A's Ticket | 404; no data | Pending |
-| API-11 | AC-06 | API | DELETE an Action; list with equal timestamps | DELETE 404 and row remains; order = `actionDateTime`, then `id` | Pending |
-| API-12 | AC-07, AC-25 | API | Same `clientRequestId` posted twice (also in parallel) | One row; second response 200 with same id | Pending |
-| API-13 | AC-08 | API | Create/edit Action on Closed and Cancelled Tickets | 422 `TICKET_LOCKED` | Pending |
-| API-14 | AC-05 | API | Anonymous request; unknown Ticket id | 401; 404 | Pending |
-| API-15 | AC-01 | API | Administrator creates and edits an Action | 201 / 200 | Pending |
+| API-01 | AC-01 | API | IT Staff creates a valid Action | 201; saved under the right Ticket; `performedBy` = session user; `version` = 1 | Pass |
+| API-02 | AC-01 | API | Body contains a different `performedById` | Ignored; performer is the authenticated user | Pass |
+| API-03 | AC-02 | API | Validation matrix: blank description, blank result, over-length fields, invalid/future/pre-creation date, follow-up required without note | Each → 400 `VALIDATION_ERROR` with `fieldErrors`; no row created | Pass |
+| API-04 | AC-02 | API | `followUpRequired=false` with a note supplied | 201; `followUpNote` stored as null | Pass |
+| API-05 | AC-03 | API | IT Staff B records an Action on A's Ticket | 201; performer B; `ticketOwnerId` unchanged | Pass |
+| API-06 | AC-04 | API | Edit with current `expectedVersion` | 200; `version`+1; `lastEditedBy` set; performer unchanged | Pass |
+| API-07 | AC-04 | API | Edit with stale `expectedVersion` | 409 `STALE_UPDATE` with `current`; data not overwritten | Pass |
+| API-08 | AC-09 | API | Mark follow-up completed; same on an Action without follow-up | `followUpCompletedAt` set; second case 400 | Pass |
+| API-09 | AC-05 | API | Owner Requester lists Actions; tries POST and PATCH | List 200 (all fields); write attempts 403 | Pass |
+| API-10 | AC-05 | API | Requester B lists Actions of A's Ticket | 404; no data | Pass |
+| API-11 | AC-06 | API | DELETE an Action; list with equal timestamps | DELETE 404 and row remains; order = `actionDateTime`, then `id` | Pass |
+| API-12 | AC-07, AC-25 | API | Same `clientRequestId` posted twice (also in parallel) | One row; second response 200 with same id | Pass |
+| API-13 | AC-08 | API | Create/edit Action on Closed and Cancelled Tickets | 422 `TICKET_LOCKED` | Pass |
+| API-14 | AC-05 | API | Anonymous request; unknown Ticket id | 401; 404 | Pass |
+| API-15 | AC-01 | API | Administrator creates and edits an Action | 201 / 200 | Pass |
 
 ### 2.3 API — Ticket workflow (`S/ticket-workflow.api.test.ts`)
 | Test ID | AC | Type | What It Tests | Expected Result | Final |
@@ -100,13 +100,13 @@ Paths: `S/` = `server/tests/lab-04/`, `C/` = `client/tests/lab-04/`, `E/` = `e2e
 ### 2.6 UI component (Vitest)
 | Test ID | AC | Type | What It Tests | Expected Result | Automated Test File | Final |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| UI-01 | AC-01 | UI | Actions list rendering and empty state | Ordered rows with all 7 fields; empty → "No actions recorded yet" | `C/ActionsTaken.test.tsx` | Pending |
-| UI-02 | AC-02 | UI | Create form validation | Red asterisks; errors under fields (text + icon); follow-up note required only when box ticked; API not called when invalid | `C/ActionsTaken.test.tsx` | Pending |
-| UI-03 | AC-25, AC-07 | UI | Submit busy state and double click | Button disabled while pending; one request sent | `C/ActionsTaken.test.tsx` | Pending |
-| UI-04 | AC-26 | UI | 400/network failure on create | Entered values preserved; safe message | `C/ActionsTaken.test.tsx` | Pending |
-| UI-05 | AC-04, AC-14 | UI | Edit mode pre-filled; save sends `expectedVersion`; 409 | Conflict banner with Reload; edits kept | `C/ActionsTaken.test.tsx` | Pending |
-| UI-06 | AC-05 | UI | Requester view of Actions | Read-only; no create/edit controls | `C/ActionsTaken.test.tsx` | Pending |
-| UI-07 | AC-09, AC-28 | UI | Follow-up display and completion | "Follow-up open/done" as text badge; "Mark completed" only for open follow-ups | `C/ActionsTaken.test.tsx` | Pending |
+| UI-01 | AC-01 | UI | Actions list rendering and empty state | Ordered rows with all 7 fields; empty → "No actions recorded yet" | `C/ActionsTaken.test.tsx` | Pass |
+| UI-02 | AC-02 | UI | Create form validation | Red asterisks; errors under fields (text + icon); follow-up note required only when box ticked; API not called when invalid | `C/ActionsTaken.test.tsx` | Pass |
+| UI-03 | AC-25, AC-07 | UI | Submit busy state and double click | Button disabled while pending; one request sent | `C/ActionsTaken.test.tsx` | Pass |
+| UI-04 | AC-26 | UI | 400/network failure on create | Entered values preserved; safe message | `C/ActionsTaken.test.tsx` | Pass |
+| UI-05 | AC-04, AC-14 | UI | Edit mode pre-filled; save sends `expectedVersion`; 409 | Conflict banner with Reload; edits kept | `C/ActionsTaken.test.tsx` | Pass |
+| UI-06 | AC-05 | UI | Requester view of Actions | Read-only; no create/edit controls | `C/ActionsTaken.test.tsx` | Pass |
+| UI-07 | AC-09, AC-28 | UI | Follow-up display and completion | "Follow-up open/done" as text badge; "Mark completed" only for open follow-ups | `C/ActionsTaken.test.tsx` | Pass |
 | UI-08 | AC-10 | UI | Status control options | Only `allowedTransitions`; none for Requester | `C/TicketWorkflow.test.tsx` | Pending |
 | UI-09 | AC-11 | UI | Choose Resolved | Summary field required; `RESOLUTION_BLOCKED` shows checklist of missing conditions | `C/TicketWorkflow.test.tsx` | Pending |
 | UI-10 | AC-12 | UI | "Problem Appears Resolved" (Requester) and staff view | Confirmation text; status badge unchanged; staff callout "Requester indicates resolved" | `C/TicketWorkflow.test.tsx` | Pending |

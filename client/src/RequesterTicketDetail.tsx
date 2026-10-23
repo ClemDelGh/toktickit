@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import ActionsTaken from './ActionsTaken';
 
 interface Attachment { id: number; originalName: string; isRemoved: boolean; }
 interface Comment {
@@ -25,6 +26,7 @@ interface Ticket {
 interface Props { 
   ticketId: number; 
   onBack: () => void; 
+  requester?: any;
 }
 
 export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
@@ -318,6 +320,15 @@ export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
             )}
           </div>
         </div>
+
+        {/* Actions Taken Section (Read-Only for Requester) */}
+        <hr className="my-4" />
+        <ActionsTaken
+          ticketId={ticket.id}
+          ticketCreatedAt={ticket.createdAt}
+          ticketStatus={ticket.status}
+          readOnly={true}
+        />
       </div>
     </div>
   );

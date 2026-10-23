@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
+import ActionsTaken from './ActionsTaken';
 
 interface User { name: string; role: string; }
 interface Comment { id: number; text: string; createdAt: string; author: User; }
@@ -43,6 +44,7 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
   // Notes & Comments states
   const [newComment, setNewComment] = useState('');
   const [newNote, setNewNote] = useState('');
+  const [activeTab, setActiveTab] = useState<'details' | 'actions'>('details');
 
   const fetchTicket = () => {
     // AJOUT ICI
@@ -146,9 +148,45 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
         <h5 className="mb-0 fw-bold">IT Workspace: {ticket.ticketNumber}</h5>
         <button className="btn btn-sm btn-outline-light" onClick={onBack}>← Back to Queue</button>
       </div>
+
+      <div className="bg-white border-bottom px-3 pt-2">
+        <ul className="nav nav-tabs border-0" role="tablist">
+          <li className="nav-item" role="presentation">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'details'}
+              className={`nav-link border-0 ${activeTab === 'details' ? 'active fw-bold text-primary border-bottom border-primary border-3' : 'text-muted'}`}
+              onClick={() => setActiveTab('details')}
+            >
+              Ticket Details & Activity
+            </button>
+          </li>
+          <li className="nav-item" role="presentation">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'actions'}
+              className={`nav-link border-0 ${activeTab === 'actions' ? 'active fw-bold text-success border-bottom border-success border-3' : 'text-muted'}`}
+              onClick={() => setActiveTab('actions')}
+            >
+              Actions Taken
+            </button>
+          </li>
+        </ul>
+      </div>
       
       <div className="card-body bg-light">
-        <div className="row">
+        {activeTab === 'actions' ? (
+          <ActionsTaken
+            ticketId={ticket.id}
+            ticketCreatedAt={ticket.createdAt}
+            ticketStatus={ticket.status}
+            readOnly={false}
+            onActionSaved={fetchTicket}
+          />
+        ) : (
+          <div className="row">
           {/* COLONNE GAUCHE : Infos et Propriétés */}
           <div className="col-md-5 border-end pe-4">
             <h6 className="fw-bold mb-3">Requester Info</h6>
@@ -249,6 +287,7 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
 
           </div>
         </div>
+        )}
       </div>
     </div>
   );
