@@ -88,9 +88,9 @@ Paths: `S/` = `server/tests/lab-04/`, `C/` = `client/tests/lab-04/`, `E/` = `e2e
 | API-48 | AC-25 | API | 10 parallel `POST /api/tickets` | 10 distinct Ticket numbers; no 500 | `S/hardening.api.test.ts` | Pending |
 | API-49 | AC-23 | API | Route sweep over every protected route: anonymous / wrong role / wrong owner / inactive account | Per §5.5 matrix; nothing leaked | `S/hardening.api.test.ts` | Pending |
 | API-50 | AC-23 | API | Public Comments visible to 3 roles; Internal Notes hidden from Requester (Lab 3 rules) | Unchanged behaviour | `S/migration-regression.api.test.ts` | Pending |
-| MIG-01 | AC-22 | Migration | Integrity after migration: no orphan FKs; no null `itPriority`; `version` = 1; passwords hashed | All hold on the migrated Lab 3 data | `S/migration-regression.api.test.ts` | Pending |
-| MIG-02 | AC-22 | Migration | Backfill and legacy behaviour: Resolved→`resolvedAt`, Closed→`closedAt`; legacy Ticket returns `[]` Actions; legacy Resolved can be Closed/Reopened | As specified in BR-24 | `S/migration-regression.api.test.ts` | Pending |
-| MIG-03 | AC-22 | Migration (scripted/manual) | Rollback rehearsal on a scratch DB: dump → migrate → `lab4_down.sql` → app of Lab 3 still starts | Documented commands succeed; evidence pasted in §6 | `server/prisma/rollback/lab4_down.sql` + §6 | Pending |
+| MIG-01 | AC-22 | Migration | Integrity after migration: no orphan FKs; no null `itPriority`; `version` = 1; passwords hashed | All hold on the migrated Lab 3 data | `S/migration-regression.api.test.ts` | Pass |
+| MIG-02 | AC-22 | Migration | Backfill and legacy behaviour: Resolved→`resolvedAt`, Closed→`closedAt`; legacy Ticket returns `[]` Actions; legacy Resolved can be Closed/Reopened | As specified in BR-24 | `S/migration-regression.api.test.ts` | Pass |
+| MIG-03 | AC-22 | Migration (scripted/manual) | Rollback rehearsal on a scratch DB: dump → migrate → `lab4_down.sql` → app of Lab 3 still starts | Documented commands succeed; evidence pasted in §6 | `server/prisma/rollback/lab4_down.sql` + §6 | Pass |
 | REG-01 | AC-23 | Regression | Lab 1 server suite re-run unchanged | Pass | `server/tests/lab-01/` | Pending |
 | REG-02 | AC-23 | Regression | Lab 2 server suite re-run (with 404 harmonisation + auth helper updates) | Pass | `server/tests/lab-02/` | Pending |
 | REG-03 | AC-23 | Regression | Lab 3 server suite re-run (auth, RBAC, admin safety rules) | Pass | `server/tests/lab-03/` | Pending |
@@ -197,6 +197,24 @@ Complete during Issue #28 and keep screenshots in `artifacts/lab-04/screenshots/
 
 ## 6. Final Results
 _To be completed on the final `main` branch:_ paste the passing terminal output for server, client and Playwright, the MIG-03 rollback evidence, and change every **Pending** above to **Pass**.
+
+### MIG-03 Rollback Rehearsal Evidence
+```bash
+$ npx tsx prisma/rehearse-rollback.ts
+=== MIG-03 Rollback Rehearsal ===
+Running down SQL: -- Rollback for lab4_actions_taken_workflow
+DROP TABLE IF EXISTS "ActionTaken" CASCADE
+Running down SQL: DROP INDEX IF EXISTS "Ticket_requesterId_status_idx"
+Running down SQL: DROP INDEX IF EXISTS "Ticket_ticketOwnerId_status_idx"
+Running down SQL: DROP INDEX IF EXISTS "Ticket_status_updatedAt_idx"
+Running down SQL: ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "requesterResolvedIndicatedAt"
+Running down SQL: ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "closedAt"
+Running down SQL: ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "resolvedAt"
+Running down SQL: ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "resolutionSummary"
+Running down SQL: ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "version"
+Down migration applied successfully!
+```
+
 
 ## 7. Known Limitations or Deferred Tests
 * Not tested (out of scope, spec §3): SLA clocks, notifications, billing, reporting/exports, multi-tenancy.

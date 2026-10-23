@@ -47,6 +47,8 @@ model User {
   ownedTickets     Ticket[]        @relation("TicketOwner")
   comments         PublicComment[]
   internalNotes    InternalNote[]
+  actionsPerformed ActionTaken[]   @relation("ActionPerformedBy")
+  actionsEdited    ActionTaken[]   @relation("ActionEditedBy")
 }
 
 model RelatedSystem {
@@ -63,7 +65,12 @@ model Ticket {
   description       String
   requestedPriority String
   itPriority        String?
+  version           Int          @default(1)
   status            TicketStatus @default(New)
+  resolutionSummary String?
+  resolvedAt        DateTime?
+  closedAt          DateTime?
+  requesterResolvedIndicatedAt DateTime?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
@@ -81,6 +88,36 @@ model Ticket {
   attachments   Attachment[]
   comments      PublicComment[]
   internalNotes InternalNote[]
+  actionsTaken  ActionTaken[]
+
+  @@index([status, updatedAt])
+  @@index([ticketOwnerId, status])
+  @@index([requesterId, status])
+}
+
+model ActionTaken {
+  id                  Int       @id @default(autoincrement())
+  ticketId            Int
+  ticket              Ticket    @relation(fields: [ticketId], references: [id])
+  actionDateTime      DateTime
+  description         String
+  result              String
+  performedById       Int
+  performedBy         User      @relation("ActionPerformedBy", fields: [performedById], references: [id])
+  followUpRequired    Boolean   @default(false)
+  followUpNote        String?
+  followUpCompletedAt DateTime?
+  attachmentNotes     String?
+  clientRequestId     String
+  version             Int       @default(1)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  lastEditedById      Int?
+  lastEditedBy        User?     @relation("ActionEditedBy", fields: [lastEditedById], references: [id])
+
+  @@unique([performedById, clientRequestId])
+  @@index([ticketId, actionDateTime, id])
+  @@index([performedById, followUpRequired, followUpCompletedAt])
 }
 
 model Attachment {
