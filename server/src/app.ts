@@ -111,19 +111,127 @@ app.post('/api/tickets', requireAuth, async (req, res) => {
   }
 });
 
+const VALID_TICKET_STATUSES = [
+  'New',
+  'Open',
+  'InProgress',
+  'WaitingForRequester',
+  'Resolved',
+  'Closed',
+  'Reopened',
+  'Cancelled',
+] as const;
+
 app.get('/api/tickets', requireAuth, async (req, res) => {
   const requesterId = (req as any).user.userId;
 
   try {
     const prisma = getPrisma();
+
+    // Build status filter (supports comma-separated values)
+    let statusFilter: string[] | undefined;
+    if (req.query.status) {
+      const raw = String(req.query.status);
+      const parts = raw.split(',').map((s) => s.trim()).filter(Boolean);
+      for (const s of parts) {
+        if (!(VALID_TICKET_STATUSES as readonly string[]).includes(s)) {
+          return sendError(res, 400, 'VALIDATION_ERROR', `Invalid status value: ${s}`);
+        }
+      }
+      statusFilter = parts;
+    }
+
+    const where: any = { requesterId: Number(requesterId) };
+    if (statusFilter && statusFilter.length === 1) {
+      where.status = statusFilter[0];
+    } else if (statusFilter && statusFilter.length > 1) {
+      where.status = { in: statusFilter };
+    }
+
     const tickets = await prisma.ticket.findMany({
-      where: { requesterId: Number(requesterId) },
+      where,
       include: { category: true, relatedSystem: true },
       orderBy: { createdAt: 'desc' },
     });
     res.status(200).json(tickets);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch tickets' });
+  }
+});
+
+// GET /api/dashboard/requester — Requester only
+const ACTIVE_DASHBOARD_STATUSES = [
+  'New',
+  'Open',
+  'InProgress',
+  'WaitingForRequester',
+  'Reopened',
+] as const;
+
+const TICKET_SUMMARY_SELECT = {
+  id: true,
+  ticketNumber: true,
+  summary: true,
+  status: true,
+  requestedPriority: true,
+  itPriority: true,
+  updatedAt: true,
+  resolvedAt: true,
+} as const;
+
+app.get('/api/dashboard/requester', requireAuth, requireRole(['Requester']), async (req, res) => {
+  const requesterId = (req as any).user.userId;
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  try {
+    const prisma = getPrisma();
+
+    const [openCount, waitingForYouCount, resolvedCount, closedCount, recentTickets, attentionTickets, recentlyResolved] =
+      await Promise.all([
+        prisma.ticket.count({
+          where: { requesterId, status: { in: [...ACTIVE_DASHBOARD_STATUSES] } },
+        }),
+        prisma.ticket.count({
+          where: { requesterId, status: 'WaitingForRequester' },
+        }),
+        prisma.ticket.count({
+          where: { requesterId, status: 'Resolved' },
+        }),
+        prisma.ticket.count({
+          where: { requesterId, status: 'Closed' },
+        }),
+        prisma.ticket.findMany({
+          where: { requesterId },
+          select: TICKET_SUMMARY_SELECT,
+          orderBy: { updatedAt: 'desc' },
+          take: 5,
+        }),
+        prisma.ticket.findMany({
+          where: { requesterId, status: 'WaitingForRequester' },
+          select: TICKET_SUMMARY_SELECT,
+          orderBy: { updatedAt: 'asc' },
+          take: 5,
+        }),
+        prisma.ticket.findMany({
+          where: { requesterId, status: 'Resolved', resolvedAt: { gte: sevenDaysAgo } },
+          select: TICKET_SUMMARY_SELECT,
+          orderBy: { resolvedAt: 'desc' },
+          take: 5,
+        }),
+      ]);
+
+    res.json({
+      open: openCount,
+      waitingForYou: waitingForYouCount,
+      resolved: resolvedCount,
+      closed: closedCount,
+      recentTickets,
+      attentionTickets,
+      recentlyResolved,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch requester dashboard' });
   }
 });
 
