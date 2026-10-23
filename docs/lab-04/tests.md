@@ -18,8 +18,8 @@ Paths: `S/` = `server/tests/lab-04/`, `C/` = `client/tests/lab-04/`, `E/` = `e2e
 ### 2.1 Unit
 | Test ID | AC | Type | What It Tests | Expected Result | Automated Test File | Final |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| UNIT-01 | AC-10 | Unit | Transition matrix, table-driven over all 56 ordered status pairs | Exactly the 21 allowed pairs of BR-11 return allowed; same-status is not a transition | `S/workflow-rules.unit.test.ts` | Pending |
-| UNIT-02 | AC-11 | Unit | Resolution-gate evaluator for every combination of G1–G4 | Returns exactly the missing blockers (`NO_OWNER`, `NO_ACTIONS`, `OPEN_FOLLOW_UP`, `NO_RESOLUTION_SUMMARY`); empty when satisfied | `S/workflow-rules.unit.test.ts` | Pending |
+| UNIT-01 | AC-10 | Unit | Transition matrix, table-driven over all 56 ordered status pairs | Exactly the 21 allowed pairs of BR-11 return allowed; same-status is not a transition | `S/workflow-rules.unit.test.ts` | Pass |
+| UNIT-02 | AC-11 | Unit | Resolution-gate evaluator for every combination of G1–G4 | Returns exactly the missing blockers (`NO_OWNER`, `NO_ACTIONS`, `OPEN_FOLLOW_UP`, `NO_RESOLUTION_SUMMARY`); empty when satisfied | `S/workflow-rules.unit.test.ts` | Pass |
 | UNIT-03 | AC-02 | Unit | Action validator: trimming, length limits, date bounds (future +5 min, before ticket creation), follow-up rule | Field errors per BR-04/05; follow-up note normalised to null | `S/validators.unit.test.ts` | Pass |
 | UNIT-04 | AC-24 | Unit | Query-parameter parser: `sortField` whitelist, `limit` 1–100, `page` ≥ 1, status list, `owner`, `itPriority` | Valid values parsed; invalid values produce `VALIDATION_ERROR` | `S/validators.unit.test.ts` | Pending |
 
@@ -45,21 +45,21 @@ Paths: `S/` = `server/tests/lab-04/`, `C/` = `client/tests/lab-04/`, `E/` = `e2e
 ### 2.3 API — Ticket workflow (`S/ticket-workflow.api.test.ts`)
 | Test ID | AC | Type | What It Tests | Expected Result | Final |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| API-16 | AC-10 | API | `allowedTransitions` in staff and Requester Ticket detail | Staff: row of BR-11; Requester: `[]` | Pending |
-| API-17 | AC-10 | API | One valid transition per matrix row | 200; status changed; `version`+1 | Pending |
-| API-18 | AC-10 | API | Invalid transitions (New→Resolved, Closed→Open, Cancelled→Reopened, Resolved→InProgress…) | 422 `INVALID_TRANSITION`; Ticket unchanged | Pending |
-| API-19 | AC-11 | API | Resolve blocked by each single reason: no owner / no Action / open follow-up / no summary | 422 `RESOLUTION_BLOCKED` with the matching blocker | Pending |
-| API-20 | AC-11 | API | Resolve when several conditions fail | All blockers listed in one response | Pending |
-| API-21 | AC-11 | API | Resolve with gate satisfied | 200; status Resolved; `resolvedAt` and `resolutionSummary` set | Pending |
-| API-22 | AC-11 | API | Direct crafted PATCH (bypassing the UI) from Open to Resolved on a Ticket with no Actions | Still 422; UI is not the authority | Pending |
-| API-23 | AC-12 | API | Requester uses `PATCH /api/tickets/:id/resolve`, twice | Indicator set; status unchanged; second call idempotent 200 | Pending |
-| API-24 | AC-12 | API | Requester PATCHes staff route with a status; staff user calls the advisory route; Requester B on A's Ticket | 403; 403; 404 | Pending |
-| API-25 | AC-12 | API | Advisory on Resolved/Closed/Cancelled Ticket | 422 `INVALID_STATE` | Pending |
-| API-26 | AC-13 | API | Resolved→Closed; Resolved→Reopened; any status change | `closedAt` set; `resolvedAt`+indicator cleared; indicator reset on every change | Pending |
-| API-27 | AC-13, AC-08 | API | Cancel from allowed states; edit owner/priority on Closed/Cancelled | Cancel 200; edits 422 `TICKET_LOCKED` | Pending |
-| API-28 | AC-14 | API | Stale `expectedVersion`; two parallel PATCHes with the same version | 409 `STALE_UPDATE`; exactly one parallel request wins | Pending |
-| API-29 | AC-15 | API | Assign inactive IT Staff, a Requester, an active IT Staff | 400 `INVALID_OWNER` ×2; 200 | Pending |
-| API-30 | AC-15 | API | New Ticket's `itPriority`; Requester tries to change it | Equals `requestedPriority`; 403 on change | Pending |
+| API-16 | AC-10 | API | `allowedTransitions` in staff and Requester Ticket detail | Staff: row of BR-11; Requester: `[]` | Pass |
+| API-17 | AC-10 | API | One valid transition per matrix row | 200; status changed; `version`+1 | Pass |
+| API-18 | AC-10 | API | Invalid transitions (New→Resolved, Closed→Open, Cancelled→Reopened, Resolved→InProgress…) | 422 `INVALID_TRANSITION`; Ticket unchanged | Pass |
+| API-19 | AC-11 | API | Resolve blocked by each single reason: no owner / no Action / open follow-up / no summary | 422 `RESOLUTION_BLOCKED` with the matching blocker | Pass |
+| API-20 | AC-11 | API | Resolve when several conditions fail | All blockers listed in one response | Pass |
+| API-21 | AC-11 | API | Resolve with gate satisfied | 200; status Resolved; `resolvedAt` and `resolutionSummary` set | Pass |
+| API-22 | AC-11 | API | Direct crafted PATCH (bypassing the UI) from Open to Resolved on a Ticket with no Actions | Still 422; UI is not the authority | Pass |
+| API-23 | AC-12 | API | Requester uses `PATCH /api/tickets/:id/resolve`, twice | Indicator set; status unchanged; second call idempotent 200 | Pass |
+| API-24 | AC-12 | API | Requester PATCHes staff route with a status; staff user calls the advisory route; Requester B on A's Ticket | 403; 403; 404 | Pass |
+| API-25 | AC-12 | API | Advisory on Resolved/Closed/Cancelled Ticket | 422 `INVALID_STATE` | Pass |
+| API-26 | AC-13 | API | Resolved→Closed; Resolved→Reopened; any status change | `closedAt` set; `resolvedAt`+indicator cleared; indicator reset on every change | Pass |
+| API-27 | AC-13, AC-08 | API | Cancel from allowed states; edit owner/priority on Closed/Cancelled | Cancel 200; edits 422 `TICKET_LOCKED` | Pass |
+| API-28 | AC-14 | API | Stale `expectedVersion`; two parallel PATCHes with the same version | 409 `STALE_UPDATE`; exactly one parallel request wins | Pass |
+| API-29 | AC-15 | API | Assign inactive IT Staff, a Requester, an active IT Staff | 400 `INVALID_OWNER` ×2; 200 | Pass |
+| API-30 | AC-15 | API | New Ticket's `itPriority`; Requester tries to change it | Equals `requestedPriority`; 403 on change | Pass |
 
 ### 2.4 API — Dashboards
 | Test ID | AC | Type | What It Tests | Expected Result | Automated Test File | Final |
@@ -107,11 +107,11 @@ Paths: `S/` = `server/tests/lab-04/`, `C/` = `client/tests/lab-04/`, `E/` = `e2e
 | UI-05 | AC-04, AC-14 | UI | Edit mode pre-filled; save sends `expectedVersion`; 409 | Conflict banner with Reload; edits kept | `C/ActionsTaken.test.tsx` | Pass |
 | UI-06 | AC-05 | UI | Requester view of Actions | Read-only; no create/edit controls | `C/ActionsTaken.test.tsx` | Pass |
 | UI-07 | AC-09, AC-28 | UI | Follow-up display and completion | "Follow-up open/done" as text badge; "Mark completed" only for open follow-ups | `C/ActionsTaken.test.tsx` | Pass |
-| UI-08 | AC-10 | UI | Status control options | Only `allowedTransitions`; none for Requester | `C/TicketWorkflow.test.tsx` | Pending |
-| UI-09 | AC-11 | UI | Choose Resolved | Summary field required; `RESOLUTION_BLOCKED` shows checklist of missing conditions | `C/TicketWorkflow.test.tsx` | Pending |
-| UI-10 | AC-12 | UI | "Problem Appears Resolved" (Requester) and staff view | Confirmation text; status badge unchanged; staff callout "Requester indicates resolved" | `C/TicketWorkflow.test.tsx` | Pending |
-| UI-11 | AC-14, AC-26 | UI | 409 on Ticket save | Conflict message; form values kept; Reload works | `C/TicketWorkflow.test.tsx` | Pending |
-| UI-12 | AC-13, AC-08 | UI | Closed/Cancelled Ticket | Controls disabled/read-only with explanation | `C/TicketWorkflow.test.tsx` | Pending |
+| UI-08 | AC-10 | UI | Status control options | Only `allowedTransitions`; none for Requester | `C/TicketWorkflow.test.tsx` | Pass |
+| UI-09 | AC-11 | UI | Choose Resolved | Summary field required; `RESOLUTION_BLOCKED` shows checklist of missing conditions | `C/TicketWorkflow.test.tsx` | Pass |
+| UI-10 | AC-12 | UI | "Problem Appears Resolved" (Requester) and staff view | Confirmation text; status badge unchanged; staff callout "Requester indicates resolved" | `C/TicketWorkflow.test.tsx` | Pass |
+| UI-11 | AC-14, AC-26 | UI | 409 on Ticket save | Conflict message; form values kept; Reload works | `C/TicketWorkflow.test.tsx` | Pass |
+| UI-12 | AC-13, AC-08 | UI | Closed/Cancelled Ticket | Controls disabled/read-only with explanation | `C/TicketWorkflow.test.tsx` | Pass |
 | UI-13 | AC-16 | UI | Requester dashboard rendering | 4 cards + 3 lists from API data | `C/RequesterDashboard.test.tsx` | Pending |
 | UI-14 | AC-17 | UI | Zero-state | Shows `0`, empty-list messages, Create Ticket CTA | `C/RequesterDashboard.test.tsx` | Pending |
 | UI-15 | AC-20 | UI | Card / "View all" activation | Opens My Tickets with matching status filter | `C/RequesterDashboard.test.tsx` | Pending |
