@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
+import request from "supertest";
+import { app } from "../../src/app";
 import { getPrisma } from "../../src/prisma";
+import { cookieFor } from "../helpers/auth";
 
 describe("Lab 4 Migration & Regression (MIG-01, MIG-02)", () => {
   const prisma = getPrisma();
@@ -121,6 +124,34 @@ describe("Lab 4 Migration & Regression (MIG-01, MIG-02)", () => {
       // Verify actions taken exist (exact sum from spec §7.4 is 22 actions)
       const totalActions = await prisma.actionTaken.count();
       expect(totalActions).toBe(22);
+    });
+  });
+
+  describe("API-50: Public Comments and Internal Notes role visibility", () => {
+    it("Public Comments visible to Requester and Staff, Internal Notes hidden from Requester", async () => {
+      const ticket = await prisma.ticket.findFirst({
+        where: { ticketNumber: "TKT-001" },
+      });
+      expect(ticket).toBeDefined();
+
+      const requesterCookie = await cookieFor("jennifer.a@example.com");
+      const staffCookie = await cookieFor("it1@example.com");
+
+      // Requester view: has comments, but NO internalNotes property
+      const requesterRes = await request(app)
+        .get(`/api/tickets/${ticket!.id}`)
+        .set("Cookie", requesterCookie);
+      expect(requesterRes.status).toBe(200);
+      expect(requesterRes.body.comments).toBeDefined();
+      expect(requesterRes.body.internalNotes).toBeUndefined();
+
+      // Staff view: has both comments and internalNotes
+      const staffRes = await request(app)
+        .get(`/api/staff/tickets/${ticket!.id}`)
+        .set("Cookie", staffCookie);
+      expect(staffRes.status).toBe(200);
+      expect(staffRes.body.comments).toBeDefined();
+      expect(staffRes.body.internalNotes).toBeDefined();
     });
   });
 });

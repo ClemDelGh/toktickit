@@ -82,32 +82,59 @@ app.post('/api/tickets', requireAuth, async (req, res) => {
   
   const { categoryId, relatedSystemId, summary, description, requestedPriority } = req.body;
   if (!summary || !description || !categoryId || !relatedSystemId || !requestedPriority) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return sendError(res, 400, 'VALIDATION_ERROR', 'Missing required fields');
   }
 
   try {
     const prisma = getPrisma();
-    const count = await prisma.ticket.count();
-    const nextNumber = String(count + 1).padStart(4, '0');
-    const year = new Date().getFullYear();
-    const ticketNumber = `TKT-${year}-${nextNumber}`;
 
-    const ticket = await prisma.ticket.create({
-      data: {
-        ticketNumber,
-        summary,
-        description,
-        requestedPriority,
-        itPriority: requestedPriority, // BR-17
-        status: 'New',
-        categoryId: Number(categoryId),
-        relatedSystemId: Number(relatedSystemId),
-        requesterId: Number(requesterId)
+    // BR-29: Retry logic on P2002 (unique constraint violation on ticketNumber)
+    let ticket = null;
+    const year = new Date().getFullYear();
+    for (let attempt = 0; attempt < 10; attempt++) {
+      try {
+        const existingTickets = await prisma.ticket.findMany({
+          where: { ticketNumber: { startsWith: `TKT-${year}-` } },
+          select: { ticketNumber: true },
+        });
+
+        const regularNumbers = existingTickets
+          .map((t) => {
+            const m = t.ticketNumber.match(new RegExp(`^TKT-${year}-(\\d+)$`));
+            return m ? parseInt(m[1], 10) : 0;
+          })
+          .filter((n) => n < 9000);
+
+        const nextSeq = (regularNumbers.length > 0 ? Math.max(...regularNumbers) : 0) + 1 + attempt;
+        const nextNumber = String(nextSeq).padStart(4, '0');
+        const ticketNumber = `TKT-${year}-${nextNumber}`;
+
+        ticket = await prisma.ticket.create({
+          data: {
+            ticketNumber,
+            summary,
+            description,
+            requestedPriority,
+            itPriority: requestedPriority, // BR-17
+            status: 'New',
+            categoryId: Number(categoryId),
+            relatedSystemId: Number(relatedSystemId),
+            requesterId: Number(requesterId)
+          }
+        });
+        break;
+      } catch (e: any) {
+        if (e.code === 'P2002' && attempt < 9) {
+          await new Promise((resolve) => setTimeout(resolve, Math.random() * 20 * (attempt + 1)));
+          continue;
+        }
+        throw e;
       }
-    });
+    }
     res.status(201).json(ticket);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create ticket' });
+    console.error('POST /api/tickets error:', error);
+    sendError(res, 500, 'INTERNAL_ERROR', 'Failed to create ticket');
   }
 });
 
@@ -422,10 +449,9 @@ app.get('/api/tickets/:id', requireAuth, async (req, res) => {
       }
     });
 
-    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
-    
-    if (userRole === 'Requester' && ticket.requesterId !== requesterId) {
-      return res.status(403).json({ error: 'Access denied to this ticket' });
+    // BR-28: Requester sees 404 for missing OR foreign tickets (no existence leakage)
+    if (!ticket || (userRole === 'Requester' && ticket.requesterId !== requesterId)) {
+      return sendError(res, 404, 'NOT_FOUND', 'Ticket not found');
     }
 
     res.json({
@@ -433,7 +459,7 @@ app.get('/api/tickets/:id', requireAuth, async (req, res) => {
       allowedTransitions: getAllowedTransitions(ticket.status, userRole),
     });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    sendError(res, 500, 'INTERNAL_ERROR', 'Server error');
   }
 });
 
@@ -442,17 +468,23 @@ app.post('/api/tickets/:id/comments', requireAuth, async (req, res) => {
   const ticketId = Number(req.params.id);
   const { text } = req.body;
 
+  const MAX_COMMENT_LENGTH = 2000;
+
   if (!text || text.trim().length === 0) {
-    return res.status(400).json({ error: 'Comment text cannot be empty' });
+    return sendError(res, 400, 'VALIDATION_ERROR', 'Comment text cannot be empty');
+  }
+
+  if (text.trim().length > MAX_COMMENT_LENGTH) {
+    return sendError(res, 400, 'VALIDATION_ERROR', `Comment text cannot exceed ${MAX_COMMENT_LENGTH} characters`);
   }
 
   try {
     const prisma = getPrisma();
     const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
-    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
 
-    if ((req as any).user.role === 'Requester' && ticket.requesterId !== userId) {
-      return res.status(403).json({ error: 'Access denied' });
+    // BR-28: Requester sees 404 for missing OR foreign tickets
+    if (!ticket || ((req as any).user.role === 'Requester' && ticket.requesterId !== userId)) {
+      return sendError(res, 404, 'NOT_FOUND', 'Ticket not found');
     }
 
     const comment = await prisma.publicComment.create({
@@ -466,7 +498,7 @@ app.post('/api/tickets/:id/comments', requireAuth, async (req, res) => {
 
     res.status(201).json(comment);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to add comment' });
+    sendError(res, 500, 'INTERNAL_ERROR', 'Failed to add comment');
   }
 });
 
@@ -693,19 +725,26 @@ app.get('/api/staff/tickets/:id', requireAuth, requireRole(['ITStaff', 'Administ
 app.post('/api/staff/tickets/:id/notes', requireAuth, requireRole(['ITStaff', 'Administrator']), async (req, res) => {
   const user = (req as any).user;
   const { text } = req.body;
-  if (!text || !text.trim()) return res.status(400).json({ error: 'Note text is required' });
+  const MAX_NOTE_LENGTH = 2000;
+
+  if (!text || !text.trim()) return sendError(res, 400, 'VALIDATION_ERROR', 'Note text is required');
+  if (text.trim().length > MAX_NOTE_LENGTH) return sendError(res, 400, 'VALIDATION_ERROR', `Note text cannot exceed ${MAX_NOTE_LENGTH} characters`);
 
   try {
+    const ticketId = Number(req.params.id);
+    const ticket = await getPrisma().ticket.findUnique({ where: { id: ticketId } });
+    if (!ticket) return sendError(res, 404, 'NOT_FOUND', 'Ticket not found');
+
     const note = await getPrisma().internalNote.create({
       data: {
         text: text.trim(),
-        ticketId: Number(req.params.id),
+        ticketId: ticketId,
         authorId: user.userId
       }
     });
     res.status(201).json(note);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to add internal note' });
+    sendError(res, 500, 'INTERNAL_ERROR', 'Failed to add internal note');
   }
 });
 

@@ -21,7 +21,7 @@ Paths: `S/` = `server/tests/lab-04/`, `C/` = `client/tests/lab-04/`, `E/` = `e2e
 | UNIT-01 | AC-10 | Unit | Transition matrix, table-driven over all 56 ordered status pairs | Exactly the 21 allowed pairs of BR-11 return allowed; same-status is not a transition | `S/workflow-rules.unit.test.ts` | Pass |
 | UNIT-02 | AC-11 | Unit | Resolution-gate evaluator for every combination of G1–G4 | Returns exactly the missing blockers (`NO_OWNER`, `NO_ACTIONS`, `OPEN_FOLLOW_UP`, `NO_RESOLUTION_SUMMARY`); empty when satisfied | `S/workflow-rules.unit.test.ts` | Pass |
 | UNIT-03 | AC-02 | Unit | Action validator: trimming, length limits, date bounds (future +5 min, before ticket creation), follow-up rule | Field errors per BR-04/05; follow-up note normalised to null | `S/validators.unit.test.ts` | Pass |
-| UNIT-04 | AC-24 | Unit | Query-parameter parser: `sortField` whitelist, `limit` 1–100, `page` ≥ 1, status list, `owner`, `itPriority` | Valid values parsed; invalid values produce `VALIDATION_ERROR` | `S/validators.unit.test.ts` | Pending |
+| UNIT-04 | AC-24 | Unit | Query-parameter parser: `sortField` whitelist, `limit` 1–100, `page` ≥ 1, status list, `owner`, `itPriority` | Valid values parsed; invalid values produce `VALIDATION_ERROR` | `S/validators.unit.test.ts` | Pass |
 
 ### 2.2 API — Actions Taken (`S/actions-taken.api.test.ts`)
 | Test ID | AC | Type | What It Tests | Expected Result | Final |
@@ -64,38 +64,38 @@ Paths: `S/` = `server/tests/lab-04/`, `C/` = `client/tests/lab-04/`, `E/` = `e2e
 ### 2.4 API — Dashboards
 | Test ID | AC | Type | What It Tests | Expected Result | Automated Test File | Final |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| API-31 | AC-16 | API | Requester dashboard vs oracle (4 counts + 3 lists, caps and ordering) | Equal to independent Prisma queries | `S/requester-dashboard.api.test.ts` | Pending |
-| API-32 | AC-16 | API | Requester B's dashboard | Contains none of Requester A's Ticket numbers | `S/requester-dashboard.api.test.ts` | Pending |
-| API-33 | AC-17 | API | David Lee (no Tickets) | Counts 0; lists `[]` (not null) | `S/requester-dashboard.api.test.ts` | Pending |
-| API-34 | AC-19 | API | Staff/Admin/anonymous call the Requester dashboard | 403 / 403 / 401 | `S/requester-dashboard.api.test.ts` | Pending |
-| API-35 | AC-20 | API | `GET /api/tickets?status=…` for each card; invalid status | Total equals card count; invalid → 400 | `S/requester-dashboard.api.test.ts` | Pending |
-| API-36 | AC-16 | API | Recently-resolved window | Ticket resolved 2 d ago included, 10 d ago excluded | `S/requester-dashboard.api.test.ts` | Pending |
-| API-37 | AC-18 | API | Staff dashboard metrics vs oracle (`unassigned`, `myAssigned`, `byStatus` 8 keys, `byItPriority`, `awaitingReview`, `myOpenFollowUps`) | Equal to independent queries | `S/staff-dashboard.api.test.ts` | Pending |
-| API-38 | AC-18 | API | Lists: `myRecentTickets`, `urgentTickets`, `myRecentActions` | ≤5 each; correct ordering and filters; description cut at 120 | `S/staff-dashboard.api.test.ts` | Pending |
-| API-39 | AC-19 | API | Requester/anonymous; Staff vs Admin payload | 403/401; `userCounts` only for Admin and equal to oracle | `S/staff-dashboard.api.test.ts` | Pending |
-| API-40 | AC-20 | API | Queue drill-down params (`owner=me|unassigned`, `status` list, `itPriority`, `indicated`) | `meta.total` equals card count | `S/staff-dashboard.api.test.ts` | Pending |
-| API-41 | AC-24 | API | Queue with invalid `sortField`, `limit=0/1000`, `page=0`, bad `status`/`owner`/`itPriority` | 400 `VALIDATION_ERROR`, never 500 | `S/staff-dashboard.api.test.ts` | Pending |
-| API-42 | AC-18 | API | Staff/Admin who own nothing | `myAssigned` 0; own lists `[]` | `S/staff-dashboard.api.test.ts` | Pending |
-| API-43 | AC-21 | API | Database failure simulated (spy on Prisma) on both dashboards | 500 `INTERNAL_ERROR`, generic body, no stack/SQL | `S/staff-dashboard.api.test.ts` | Pending |
+| API-31 | AC-16 | API | Requester dashboard vs oracle (4 counts + 3 lists, caps and ordering) | Equal to independent Prisma queries | `S/requester-dashboard.api.test.ts` | Pass |
+| API-32 | AC-16 | API | Requester B's dashboard | Contains none of Requester A's Ticket numbers | `S/requester-dashboard.api.test.ts` | Pass |
+| API-33 | AC-17 | API | David Lee (no Tickets) | Counts 0; lists `[]` (not null) | `S/requester-dashboard.api.test.ts` | Pass |
+| API-34 | AC-19 | API | Staff/Admin/anonymous call the Requester dashboard | 403 / 403 / 401 | `S/requester-dashboard.api.test.ts` | Pass |
+| API-35 | AC-20 | API | `GET /api/tickets?status=…` for each card; invalid status | Total equals card count; invalid → 400 | `S/requester-dashboard.api.test.ts` | Pass |
+| API-36 | AC-16 | API | Recently-resolved window | Ticket resolved 2 d ago included, 10 d ago excluded | `S/requester-dashboard.api.test.ts` | Pass |
+| API-37 | AC-18 | API | Staff dashboard metrics vs oracle (`unassigned`, `myAssigned`, `byStatus` 8 keys, `byItPriority`, `awaitingReview`, `myOpenFollowUps`) | Equal to independent queries | `S/staff-dashboard.api.test.ts` | Pass |
+| API-38 | AC-18 | API | Lists: `myRecentTickets`, `urgentTickets`, `myRecentActions` | ≤5 each; correct ordering and filters; description cut at 120 | `S/staff-dashboard.api.test.ts` | Pass |
+| API-39 | AC-19 | API | Requester/anonymous; Staff vs Admin payload | 403/401; `userCounts` only for Admin and equal to oracle | `S/staff-dashboard.api.test.ts` | Pass |
+| API-40 | AC-20 | API | Queue drill-down params (`owner=me|unassigned`, `status` list, `itPriority`, `indicated`) | `meta.total` equals card count | `S/staff-dashboard.api.test.ts` | Pass |
+| API-41 | AC-24 | API | Queue with invalid `sortField`, `limit=0/1000`, `page=0`, bad `status`/`owner`/`itPriority` | 400 `VALIDATION_ERROR`, never 500 | `S/staff-dashboard.api.test.ts` | Pass |
+| API-42 | AC-18 | API | Staff/Admin who own nothing | `myAssigned` 0; own lists `[]` | `S/staff-dashboard.api.test.ts` | Pass |
+| API-43 | AC-21 | API | Database failure simulated (spy on Prisma) on both dashboards | 500 `INTERNAL_ERROR`, generic body, no stack/SQL | `S/staff-dashboard.api.test.ts` | Pass |
 
 ### 2.5 API — Hardening, migration, regression
 | Test ID | AC | Type | What It Tests | Expected Result | Automated Test File | Final |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| API-44 | AC-24 | API | Session authority: deactivated user with valid cookie; role changed by Admin; `mustChangePassword` user; cookie reissued after password change | 401; new role applies immediately; 403 `PASSWORD_CHANGE_REQUIRED` except `/me`, `/change-password`, `/logout`; new cookie works | `S/hardening.api.test.ts` | Pending |
-| API-45 | AC-24 | API | Foreign vs missing Ticket for a Requester on detail, comments, actions, resolve, attachments | Both 404, identical body | `S/hardening.api.test.ts` | Pending |
-| API-46 | AC-24 | API | Internal note on missing Ticket; empty / oversized note and comment | 404; 400 | `S/hardening.api.test.ts` | Pending |
-| API-47 | AC-24 | API | Error shape across 400/401/403/404/409/422/500 | JSON `{error, code}`; no stack trace text | `S/hardening.api.test.ts` | Pending |
-| API-48 | AC-25 | API | 10 parallel `POST /api/tickets` | 10 distinct Ticket numbers; no 500 | `S/hardening.api.test.ts` | Pending |
-| API-49 | AC-23 | API | Route sweep over every protected route: anonymous / wrong role / wrong owner / inactive account | Per §5.5 matrix; nothing leaked | `S/hardening.api.test.ts` | Pending |
-| API-50 | AC-23 | API | Public Comments visible to 3 roles; Internal Notes hidden from Requester (Lab 3 rules) | Unchanged behaviour | `S/migration-regression.api.test.ts` | Pending |
+| API-44 | AC-24 | API | Session authority: deactivated user with valid cookie; role changed by Admin; `mustChangePassword` user; cookie reissued after password change | 401; new role applies immediately; 403 `PASSWORD_CHANGE_REQUIRED` except `/me`, `/change-password`, `/logout`; new cookie works | `S/hardening.api.test.ts` | Pass |
+| API-45 | AC-24 | API | Foreign vs missing Ticket for a Requester on detail, comments, actions, resolve, attachments | Both 404, identical body | `S/hardening.api.test.ts` | Pass |
+| API-46 | AC-24 | API | Internal note on missing Ticket; empty / oversized note and comment | 404; 400 | `S/hardening.api.test.ts` | Pass |
+| API-47 | AC-24 | API | Error shape across 400/401/403/404/409/422/500 | JSON `{error, code}`; no stack trace text | `S/hardening.api.test.ts` | Pass |
+| API-48 | AC-25 | API | 10 parallel `POST /api/tickets` | 10 distinct Ticket numbers; no 500 | `S/hardening.api.test.ts` | Pass |
+| API-49 | AC-23 | API | Route sweep over every protected route: anonymous / wrong role / wrong owner / inactive account | Per §5.5 matrix; nothing leaked | `S/hardening.api.test.ts` | Pass |
+| API-50 | AC-23 | API | Public Comments visible to 3 roles; Internal Notes hidden from Requester (Lab 3 rules) | Unchanged behaviour | `S/migration-regression.api.test.ts` | Pass |
 | MIG-01 | AC-22 | Migration | Integrity after migration: no orphan FKs; no null `itPriority`; `version` = 1; passwords hashed | All hold on the migrated Lab 3 data | `S/migration-regression.api.test.ts` | Pass |
 | MIG-02 | AC-22 | Migration | Backfill and legacy behaviour: Resolved→`resolvedAt`, Closed→`closedAt`; legacy Ticket returns `[]` Actions; legacy Resolved can be Closed/Reopened | As specified in BR-24 | `S/migration-regression.api.test.ts` | Pass |
 | MIG-03 | AC-22 | Migration (scripted/manual) | Rollback rehearsal on a scratch DB: dump → migrate → `lab4_down.sql` → app of Lab 3 still starts | Documented commands succeed; evidence pasted in §6 | `server/prisma/rollback/lab4_down.sql` + §6 | Pass |
-| REG-01 | AC-23 | Regression | Lab 1 server suite re-run unchanged | Pass | `server/tests/lab-01/` | Pending |
-| REG-02 | AC-23 | Regression | Lab 2 server suite re-run (with 404 harmonisation + auth helper updates) | Pass | `server/tests/lab-02/` | Pending |
-| REG-03 | AC-23 | Regression | Lab 3 server suite re-run (auth, RBAC, admin safety rules) | Pass | `server/tests/lab-03/` | Pending |
-| PERF-01 | AC-30 | Perf-smoke | Both dashboards with ≥ 500 Tickets | 200 in < 1000 ms | `S/performance-smoke.api.test.ts` | Pending |
-| PERF-02 | AC-30 | Perf-smoke | Staff queue page (limit 50) with ≥ 500 Tickets | 200 in < 1000 ms | `S/performance-smoke.api.test.ts` | Pending |
+| REG-01 | AC-23 | Regression | Lab 1 server suite re-run unchanged | Pass | `server/tests/lab-01/` | Pass |
+| REG-02 | AC-23 | Regression | Lab 2 server suite re-run (with 404 harmonisation + auth helper updates) | Pass | `server/tests/lab-02/` | Pass |
+| REG-03 | AC-23 | Regression | Lab 3 server suite re-run (auth, RBAC, admin safety rules) | Pass | `server/tests/lab-03/` | Pass |
+| PERF-01 | AC-30 | Perf-smoke | Both dashboards with ≥ 500 Tickets | 200 in < 1000 ms | `S/performance-smoke.api.test.ts` | Pass |
+| PERF-02 | AC-30 | Perf-smoke | Staff queue page (limit 50) with ≥ 500 Tickets | 200 in < 1000 ms | `S/performance-smoke.api.test.ts` | Pass |
 
 ### 2.6 UI component (Vitest)
 | Test ID | AC | Type | What It Tests | Expected Result | Automated Test File | Final |
@@ -112,16 +112,16 @@ Paths: `S/` = `server/tests/lab-04/`, `C/` = `client/tests/lab-04/`, `E/` = `e2e
 | UI-10 | AC-12 | UI | "Problem Appears Resolved" (Requester) and staff view | Confirmation text; status badge unchanged; staff callout "Requester indicates resolved" | `C/TicketWorkflow.test.tsx` | Pass |
 | UI-11 | AC-14, AC-26 | UI | 409 on Ticket save | Conflict message; form values kept; Reload works | `C/TicketWorkflow.test.tsx` | Pass |
 | UI-12 | AC-13, AC-08 | UI | Closed/Cancelled Ticket | Controls disabled/read-only with explanation | `C/TicketWorkflow.test.tsx` | Pass |
-| UI-13 | AC-16 | UI | Requester dashboard rendering | 4 cards + 3 lists from API data | `C/RequesterDashboard.test.tsx` | Pending |
-| UI-14 | AC-17 | UI | Zero-state | Shows `0`, empty-list messages, Create Ticket CTA | `C/RequesterDashboard.test.tsx` | Pending |
-| UI-15 | AC-20 | UI | Card / "View all" activation | Opens My Tickets with matching status filter | `C/RequesterDashboard.test.tsx` | Pending |
-| UI-16 | AC-21 | UI | Loading, error + Retry | Accessible loading text; generic error; Retry refetches | `C/RequesterDashboard.test.tsx` | Pending |
-| UI-17 | AC-18 | UI | Staff dashboard rendering; Admin vs Staff | All cards/lists; Users card only for Admin | `C/StaffDashboard.test.tsx` | Pending |
-| UI-18 | AC-20 | UI | Card activation | Opens Queue with `owner/status/itPriority/indicated` filters | `C/StaffDashboard.test.tsx` | Pending |
-| UI-19 | AC-21 | UI | Loading, empty, forbidden, failure states | Each visibly distinct | `C/StaffDashboard.test.tsx` | Pending |
-| UI-20 | AC-29 | UI | Role navigation and active indicator | Requester: Dashboard/Create/My Tickets; Staff: Dashboard/Queue; Admin: Dashboard/Queue/Users; `aria-current` on active | `C/Navigation.test.tsx` | Pending |
-| UI-21 | AC-28 | UI | Accessible names | Icon-only buttons have labels; cards expose label+value; badges contain text | `C/Navigation.test.tsx` | Pending |
-| UI-22 | AC-29 | UI | Obsolete UI removed | No Lab 1 "Check System"/Lab 2 selector text or placeholder strings rendered | `C/Navigation.test.tsx` | Pending |
+| UI-13 | AC-16 | UI | Requester dashboard rendering | 4 cards + 3 lists from API data | `C/RequesterDashboard.test.tsx` | Pass |
+| UI-14 | AC-17 | UI | Zero-state | Shows `0`, empty-list messages, Create Ticket CTA | `C/RequesterDashboard.test.tsx` | Pass |
+| UI-15 | AC-20 | UI | Card / "View all" activation | Opens My Tickets with matching status filter | `C/RequesterDashboard.test.tsx` | Pass |
+| UI-16 | AC-21 | UI | Loading, error + Retry | Accessible loading text; generic error; Retry refetches | `C/RequesterDashboard.test.tsx` | Pass |
+| UI-17 | AC-18 | UI | Staff dashboard rendering; Admin vs Staff | All cards/lists; Users card only for Admin | `C/StaffDashboard.test.tsx` | Pass |
+| UI-18 | AC-20 | UI | Card activation | Opens Queue with `owner/status/itPriority/indicated` filters | `C/StaffDashboard.test.tsx` | Pass |
+| UI-19 | AC-21 | UI | Loading, empty, forbidden, failure states | Each visibly distinct | `C/StaffDashboard.test.tsx` | Pass |
+| UI-20 | AC-29 | UI | Role navigation and active indicator | Requester: Dashboard/Create/My Tickets; Staff: Dashboard/Queue; Admin: Dashboard/Queue/Users; `aria-current` on active | `C/Navigation.test.tsx` | Pass |
+| UI-21 | AC-28 | UI | Accessible names | Icon-only buttons have labels; cards expose label+value; badges contain text | `C/Navigation.test.tsx` | Pass |
+| UI-22 | AC-29 | UI | Obsolete UI removed | No Lab 1 "Check System"/Lab 2 selector text or placeholder strings rendered | `C/Navigation.test.tsx` | Pass |
 
 ### 2.7 E2E, responsive, accessibility (Playwright)
 | Test ID | AC | Type | What It Tests | Expected Result | Automated Test File | Final |
