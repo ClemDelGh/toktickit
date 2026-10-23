@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { getPrisma } from "../../src/prisma.js";
+import { getPrisma } from "../../src/prisma";
 
 const JWT_SECRET = process.env.JWT_SECRET || "super-secret-lab3-key";
 

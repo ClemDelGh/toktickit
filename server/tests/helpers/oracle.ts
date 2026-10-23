@@ -1,4 +1,4 @@
-import { getPrisma } from "../../src/prisma.js";
+import { getPrisma } from "../../src/prisma";
 
 export const ACTIVE_STATUSES = [
   "New",

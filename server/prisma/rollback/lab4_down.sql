@@ -10,3 +10,4 @@ ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "closedAt";
 ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "resolvedAt";
 ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "resolutionSummary";
 ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "version";
+

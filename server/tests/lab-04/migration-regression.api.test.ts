@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll } from "vitest";
-import { getPrisma } from "../../src/prisma.js";
+import { describe, it, expect } from "vitest";
+import { getPrisma } from "../../src/prisma";
 
 describe("Lab 4 Migration & Regression (MIG-01, MIG-02)", () => {
   const prisma = getPrisma();

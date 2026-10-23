@@ -1,4 +1,5 @@
-import { getPrisma } from "../src/prisma.js";
+import { getPrisma } from "../src/prisma";
+import { Role, TicketStatus } from "@prisma/client";
 import bcrypt from "bcrypt";
 
 async function main() {
@@ -23,18 +24,25 @@ async function main() {
   // 2. Création des utilisateurs
   const defaultHash = await bcrypt.hash("password", 12);
 
-  const users = [
-    { email: "jennifer.a@example.com", name: "Jennifer Anderson", isActive: true, role: "Requester", passwordHash: defaultHash, mustChangePassword: true },
-    { email: "michael.b@example.com", name: "Michael Brown", isActive: true, role: "Requester", passwordHash: defaultHash, mustChangePassword: true },
-    { email: "sarah.j@example.com", name: "Sarah Johnson", isActive: true, role: "Requester", passwordHash: defaultHash, mustChangePassword: true },
-    { email: "david.l@example.com", name: "David Lee", isActive: true, role: "Requester", passwordHash: defaultHash, mustChangePassword: true },
-    { email: "inactive.user@example.com", name: "Inactive User", isActive: false, role: "Requester", passwordHash: defaultHash, mustChangePassword: true },
-    { email: "staff@example.com", name: "Staff User", isActive: true, role: "ITStaff", passwordHash: defaultHash, mustChangePassword: true },
-    { email: "it1@example.com", name: "IT Staff One", isActive: true, role: "ITStaff", passwordHash: defaultHash, mustChangePassword: true },
-    { email: "it2@example.com", name: "IT Staff Two", isActive: true, role: "ITStaff", passwordHash: defaultHash, mustChangePassword: true },
-    { email: "it3@example.com", name: "IT Staff Three", isActive: true, role: "ITStaff", passwordHash: defaultHash, mustChangePassword: true },
-    { email: "it.inactive@example.com", name: "Inactive IT", isActive: false, role: "ITStaff", passwordHash: defaultHash, mustChangePassword: true },
-    { email: "admin@example.com", name: "System Admin", isActive: true, role: "Administrator", passwordHash: defaultHash, mustChangePassword: true }
+  const users: Array<{
+    email: string;
+    name: string;
+    isActive: boolean;
+    role: Role;
+    passwordHash: string;
+    mustChangePassword: boolean;
+  }> = [
+    { email: "jennifer.a@example.com", name: "Jennifer Anderson", isActive: true, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: true },
+    { email: "michael.b@example.com", name: "Michael Brown", isActive: true, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: true },
+    { email: "sarah.j@example.com", name: "Sarah Johnson", isActive: true, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: true },
+    { email: "david.l@example.com", name: "David Lee", isActive: true, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: true },
+    { email: "inactive.user@example.com", name: "Inactive User", isActive: false, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: true },
+    { email: "staff@example.com", name: "Staff User", isActive: true, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: true },
+    { email: "it1@example.com", name: "IT Staff One", isActive: true, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: true },
+    { email: "it2@example.com", name: "IT Staff Two", isActive: true, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: true },
+    { email: "it3@example.com", name: "IT Staff Three", isActive: true, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: true },
+    { email: "it.inactive@example.com", name: "Inactive IT", isActive: false, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: true },
+    { email: "admin@example.com", name: "System Admin", isActive: true, role: Role.Administrator, passwordHash: defaultHash, mustChangePassword: true }
   ];
 
   for (const user of users) {
@@ -42,13 +50,13 @@ async function main() {
       where: { email: user.email },
       update: {
         passwordHash: user.passwordHash,
-        role: user.role as any,
+        role: user.role,
         isActive: user.isActive,
         mustChangePassword: user.mustChangePassword
       },
       create: {
         ...user,
-        role: user.role as any
+        role: user.role
       }
     });
   }
@@ -166,7 +174,7 @@ async function main() {
     description: string;
     requestedPriority: string;
     itPriority: string;
-    status: any;
+    status: TicketStatus;
     requesterId: number;
     ticketOwnerId: number | null;
     categoryId: number;
