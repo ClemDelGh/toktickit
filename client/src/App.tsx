@@ -4,12 +4,18 @@ import Login from './Login';
 import ChangePassword from './ChangePassword';
 import CreateTicket from './CreateTicket';
 import MyTickets from './MyTickets';
+import RequesterDashboard from './RequesterDashboard';
+import StaffDashboard from './StaffDashboard';
 import StaffTicketQueue from './StaffTicketQueue';
 import UserManagement from './UserManagement';
 
+type ActiveTab = 'dashboard' | 'create' | 'list' | 'queue' | 'users';
+
 export default function App() {
   const { user, isLoading, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'create' | 'list'>('create');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [queueFilter, setQueueFilter] = useState<Record<string, string>>({});
 
   if (isLoading) {
     return (
@@ -29,6 +35,21 @@ export default function App() {
     return <ChangePassword />;
   }
 
+  const navButtonClass = (tab: ActiveTab) =>
+    `btn btn-sm fw-bold`;
+  const navButtonStyle = (tab: ActiveTab): React.CSSProperties => ({
+    backgroundColor: activeTab === tab ? '#006B3C' : 'transparent',
+    borderColor: '#006B3C',
+    border: '1px solid #006B3C',
+    color: activeTab === tab ? '#ffffff' : '#004d2a',  // darker green for inactive = better contrast
+  });
+
+  const handleTabChange = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    if (tab !== 'list') setStatusFilter('');
+    if (tab !== 'queue') setQueueFilter({});
+  };
+
   return (
     <div>
       <nav className="navbar navbar-dark shadow-sm" style={{ backgroundColor: '#006B3C' }}>
@@ -41,8 +62,8 @@ export default function App() {
                <span className="fw-bold">{user.name}</span>
                <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>Role: {user.role}</span>
             </span>
-            <button 
-              className="btn btn-sm btn-outline-light" 
+            <button
+              className="btn btn-sm btn-outline-light"
               onClick={logout}
             >
               Logout
@@ -51,45 +72,111 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Barre de navigation interne, affichée uniquement pour le rôle Requester pour le moment */}
-      {user.role === 'Requester' && (
-        <div className="bg-light border-bottom py-2">
-          <div className="container">
-            <div className="btn-group" role="group">
-              <button 
-                type="button" 
-                className={`btn btn-sm ${activeTab === 'create' ? 'text-white' : 'btn-outline-success'}`}
-                style={{ backgroundColor: activeTab === 'create' ? '#006B3C' : 'transparent', borderColor: '#006B3C' }}
-                onClick={() => setActiveTab('create')}
+      {/* Role-aware navigation */}
+      <div className="bg-light border-bottom py-2">
+        <div className="container">
+          <div className="btn-group" role="group">
+            {/* Dashboard — all roles */}
+            <button
+              type="button"
+              className={navButtonClass('dashboard')}
+              style={navButtonStyle('dashboard')}
+              aria-current={activeTab === 'dashboard' ? 'page' : undefined}
+              onClick={() => handleTabChange('dashboard')}
+            >
+              Dashboard
+            </button>
+
+            {/* Requester-only tabs */}
+            {user.role === 'Requester' && (
+              <>
+                <button
+                  type="button"
+                  className={navButtonClass('create')}
+                  style={navButtonStyle('create')}
+                  aria-current={activeTab === 'create' ? 'page' : undefined}
+                  onClick={() => handleTabChange('create')}
+                >
+                  Create Ticket
+                </button>
+                <button
+                  type="button"
+                  className={navButtonClass('list')}
+                  style={navButtonStyle('list')}
+                  aria-current={activeTab === 'list' ? 'page' : undefined}
+                  onClick={() => handleTabChange('list')}
+                >
+                  My Tickets
+                </button>
+              </>
+            )}
+
+            {/* Staff & Admin tabs */}
+            {(user.role === 'ITStaff' || user.role === 'Administrator') && (
+              <button
+                type="button"
+                className={navButtonClass('queue')}
+                style={navButtonStyle('queue')}
+                aria-current={activeTab === 'queue' ? 'page' : undefined}
+                onClick={() => handleTabChange('queue')}
               >
-                Create Ticket
+                Queue
               </button>
-              <button 
-                type="button" 
-                className={`btn btn-sm ${activeTab === 'list' ? 'text-white' : 'btn-outline-success'}`}
-                style={{ backgroundColor: activeTab === 'list' ? '#006B3C' : 'transparent', borderColor: '#006B3C' }}
-                onClick={() => setActiveTab('list')}
+            )}
+
+            {/* Admin-only tab */}
+            {user.role === 'Administrator' && (
+              <button
+                type="button"
+                className={navButtonClass('users')}
+                style={navButtonStyle('users')}
+                aria-current={activeTab === 'users' ? 'page' : undefined}
+                onClick={() => handleTabChange('users')}
               >
-                My Tickets
+                Users
               </button>
-            </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       <main className="container mt-4 mb-5">
-        {/* Rendu conditionnel basé sur le rôle de l'utilisateur */}
-        {user.role === 'Requester' && (
-          activeTab === 'create' ? <CreateTicket /> : <MyTickets />
+        {/* Requester views */}
+        {user.role === 'Requester' && activeTab === 'dashboard' && (
+          <RequesterDashboard
+            setActiveTab={setActiveTab}
+            setStatusFilter={setStatusFilter}
+          />
         )}
-        
-        {user.role === 'ITStaff' && (
-          <StaffTicketQueue />
+        {user.role === 'Requester' && activeTab === 'create' && <CreateTicket />}
+        {user.role === 'Requester' && activeTab === 'list' && (
+          <MyTickets statusFilter={statusFilter} />
         )}
 
-        {user.role === 'Administrator' && (
-          <UserManagement />
+        {/* ITStaff views */}
+        {user.role === 'ITStaff' && activeTab === 'dashboard' && (
+          <StaffDashboard
+            user={user}
+            setActiveTab={setActiveTab}
+            setQueueFilter={setQueueFilter}
+          />
         )}
+        {user.role === 'ITStaff' && activeTab === 'queue' && (
+          <StaffTicketQueue queueFilter={queueFilter} />
+        )}
+
+        {/* Administrator views */}
+        {user.role === 'Administrator' && activeTab === 'dashboard' && (
+          <StaffDashboard
+            user={user}
+            setActiveTab={setActiveTab}
+            setQueueFilter={setQueueFilter}
+          />
+        )}
+        {user.role === 'Administrator' && activeTab === 'queue' && (
+          <StaffTicketQueue queueFilter={queueFilter} />
+        )}
+        {user.role === 'Administrator' && activeTab === 'users' && <UserManagement />}
       </main>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import ActionsTaken from './ActionsTaken';
 
 interface Attachment { id: number; originalName: string; isRemoved: boolean; }
 interface Comment {
@@ -20,11 +21,14 @@ interface Ticket {
   requester: { name: string };
   attachments: Attachment[];
   comments: Comment[]; // NOUVEAU: Le tableau des commentaires
+  requesterResolvedIndicatedAt?: string | null;
+  allowedTransitions?: string[];
 }
 
 interface Props { 
   ticketId: number; 
   onBack: () => void; 
+  requester?: any;
 }
 
 export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
@@ -142,18 +146,17 @@ export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
   };
 
   const handleResolve = async () => {
-    if (!confirm('Are you sure your problem is resolved? This will update the ticket status.')) return;
-    
     setResolving(true);
     try {
       const res = await fetch(`/api/tickets/${ticketId}/resolve`, {
         method: 'PATCH',
-        credentials: 'include' // AJOUT ICI
+        credentials: 'include'
       });
       if (!res.ok) throw new Error();
-      fetchTicket();
+      const updated = await res.json();
+      setTicket(prev => prev ? { ...prev, ...updated } : updated);
     } catch (err) {
-      alert('Failed to resolve ticket.');
+      alert('Failed to indicate resolution.');
     } finally {
       setResolving(false);
     }
@@ -178,17 +181,22 @@ export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
       <div className="card-body bg-white">
         
         {/* En-tête des actions */}
-        {canResolve && (
-          <div className="d-flex justify-content-end mb-3">
-             <button 
-               className="btn btn-outline-success" 
-               onClick={handleResolve}
-               disabled={resolving}
-             >
-               {resolving ? 'Resolving...' : '✓ Problem Appears Resolved'}
-             </button>
-          </div>
-        )}
+        <div className="d-flex justify-content-end mb-3">
+          {ticket.requesterResolvedIndicatedAt ? (
+            <div className="alert alert-success py-1 px-3 small mb-0 d-inline-flex align-items-center">
+              ✓ You indicated this problem appears resolved.
+            </div>
+          ) : canResolve ? (
+            <button 
+              type="button"
+              className="btn btn-outline-success" 
+              onClick={handleResolve}
+              disabled={resolving}
+            >
+              {resolving ? 'Submitting...' : '✓ Problem Appears Resolved'}
+            </button>
+          ) : null}
+        </div>
 
         {/* Read-Only Fields */}
         <div className="row g-3 mb-4">
@@ -318,6 +326,15 @@ export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
             )}
           </div>
         </div>
+
+        {/* Actions Taken Section (Read-Only for Requester) */}
+        <hr className="my-4" />
+        <ActionsTaken
+          ticketId={ticket.id}
+          ticketCreatedAt={ticket.createdAt}
+          ticketStatus={ticket.status}
+          readOnly={true}
+        />
       </div>
     </div>
   );

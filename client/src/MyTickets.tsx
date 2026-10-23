@@ -12,7 +12,12 @@ interface Ticket {
   relatedSystem: { name: string };
 }
 
-export default function MyTickets() {
+interface MyTicketsProps {
+  requester?: any;
+  statusFilter?: string;
+}
+
+export default function MyTickets({ requester, statusFilter }: MyTicketsProps = {}) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -21,8 +26,8 @@ export default function MyTickets() {
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
 
   useEffect(() => {
-    // AJOUT ICI : { credentials: 'include' }
-    fetch('/api/tickets', { credentials: 'include' })
+    const url = statusFilter ? `/api/tickets?status=${encodeURIComponent(statusFilter)}` : '/api/tickets';
+    fetch(url, { credentials: 'include' })
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch tickets');
         return res.json();
@@ -36,7 +41,7 @@ export default function MyTickets() {
         setError('Unable to load your tickets.');
         setLoading(false);
       });
-  }, []);
+  }, [statusFilter]);
 
   if (selectedTicketId) {
     return (

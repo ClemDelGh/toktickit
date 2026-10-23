@@ -20,7 +20,11 @@ interface Meta {
   totalPages: number;
 }
 
-export default function StaffTicketQueue() {
+interface StaffTicketQueueProps {
+  queueFilter?: Record<string, string>;
+}
+
+export default function StaffTicketQueue({ queueFilter = {} }: StaffTicketQueueProps = {}) {
   // <-- NOUVEL ÉTAT POUR MÉMORISER LE TICKET SÉLECTIONNÉ
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   
@@ -54,6 +58,13 @@ export default function StaffTicketQueue() {
     if (status) params.append('status', status);
     if (priority) params.append('priority', priority);
 
+    // Apply queueFilter
+    for (const [key, val] of Object.entries(queueFilter)) {
+      if (val !== undefined && val !== null && val !== '') {
+        params.set(key, val);
+      }
+    }
+
     // AJOUT ICI : { credentials: 'include' }
     fetch(`/api/staff/tickets?${params.toString()}`, { credentials: 'include' })
       .then(res => {
@@ -76,7 +87,7 @@ export default function StaffTicketQueue() {
     if (!selectedTicketId) {
       fetchTickets();
     }
-  }, [search, status, priority, page, sortField, sortOrder, selectedTicketId]);
+  }, [search, status, priority, page, sortField, sortOrder, selectedTicketId, queueFilter]);
 
   // Gérer le changement de tri
   const handleSort = (field: string) => {
@@ -165,7 +176,7 @@ export default function StaffTicketQueue() {
                     <p className="mb-1 text-truncate fw-bold">{t.summary}</p>
                     <p className="mb-1 small">Requester: {t.requester.name}</p>
                     <div className="d-flex justify-content-between align-items-center mt-2">
-                       <span className={`badge bg-${t.requestedPriority === 'High' ? 'danger' : 'warning'}`}>{t.requestedPriority}</span>
+                       <span className={`badge bg-${t.requestedPriority === 'High' ? 'danger' : 'warning'} text-dark`}>{t.requestedPriority}</span>
                        {/* <-- BOUTON OPEN CONNECTÉ */}
                        <button className="btn btn-sm btn-primary" onClick={() => setSelectedTicketId(t.id)}>Open</button>
                     </div>
@@ -205,7 +216,7 @@ export default function StaffTicketQueue() {
                       <td>{t.requester.name}</td>
                       <td className="text-muted">{t.ticketOwner?.name || 'Unassigned'}</td>
                       <td>
-                        <span className={`badge bg-${t.requestedPriority === 'High' ? 'danger' : t.requestedPriority === 'Medium' ? 'warning' : 'secondary'}`}>
+                        <span className={`badge bg-${t.requestedPriority === 'High' ? 'danger' : t.requestedPriority === 'Medium' ? 'warning text-dark' : 'secondary'}`}>
                           {t.requestedPriority}
                         </span>
                       </td>

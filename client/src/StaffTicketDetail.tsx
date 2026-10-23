@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
+import ActionsTaken from './ActionsTaken';
 
 interface User { name: string; role: string; }
 interface Comment { id: number; text: string; createdAt: string; author: User; }
@@ -14,6 +15,7 @@ interface Ticket {
   requestedPriority: string;
   itPriority: string | null;
   status: string;
+  version: number;
   createdAt: string;
   category: { name: string };
   relatedSystem: { name: string };
@@ -22,6 +24,11 @@ interface Ticket {
   comments: Comment[];
   internalNotes: InternalNote[];
   attachments: Attachment[];
+  resolutionSummary?: string | null;
+  resolvedAt?: string | null;
+  closedAt?: string | null;
+  requesterResolvedIndicatedAt?: string | null;
+  allowedTransitions?: string[];
 }
 
 interface Props {
@@ -38,11 +45,15 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
   // Form states
   const [status, setStatus] = useState('');
   const [itPriority, setItPriority] = useState('');
+  const [resolutionSummary, setResolutionSummary] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [blockers, setBlockers] = useState<string[]>([]);
+  const [conflictError, setConflictError] = useState<string | null>(null);
 
   // Notes & Comments states
   const [newComment, setNewComment] = useState('');
   const [newNote, setNewNote] = useState('');
+  const [activeTab, setActiveTab] = useState<'details' | 'actions'>('details');
 
   const fetchTicket = () => {
     // AJOUT ICI
@@ -52,6 +63,9 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
         setTicket(data); 
         setStatus(data.status);
         setItPriority(data.itPriority || '');
+        setResolutionSummary(data.resolutionSummary || '');
+        setBlockers([]);
+        setConflictError(null);
         setLoading(false); 
       })
       .catch(() => { setError('Error loading ticket details'); setLoading(false); });
@@ -62,16 +76,45 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
   const handleUpdateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     setUpdating(true);
+    setConflictError(null);
+    setBlockers([]);
+
     try {
+      const payload: any = {
+        expectedVersion: ticket?.version,
+        status,
+        itPriority: itPriority || null,
+      };
+
+      if (status === 'Resolved' || ticket?.status === 'Resolved') {
+        payload.resolutionSummary = resolutionSummary;
+      }
+
       const res = await fetch(`/api/staff/tickets/${ticketId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // AJOUT ICI
-        body: JSON.stringify({ status, itPriority: itPriority || null })
+        credentials: 'include',
+        body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error();
+
+      const data = await res.json();
+
+      if (res.status === 409) {
+        setConflictError(data.error || 'The ticket has been modified by another user.');
+        return;
+      }
+
+      if (res.status === 422 && data.code === 'RESOLUTION_BLOCKED') {
+        setBlockers(data.blockers || []);
+        return;
+      }
+
+      if (!res.ok) {
+        alert(data.error || 'Failed to update ticket.');
+        return;
+      }
+
       fetchTicket();
-      alert('Ticket updated successfully!');
     } catch {
       alert('Failed to update ticket.');
     } finally {
@@ -146,11 +189,96 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
         <h5 className="mb-0 fw-bold">IT Workspace: {ticket.ticketNumber}</h5>
         <button className="btn btn-sm btn-outline-light" onClick={onBack}>← Back to Queue</button>
       </div>
+
+      <div className="bg-white border-bottom px-3 pt-2">
+        <ul className="nav nav-tabs border-0" role="tablist">
+          <li className="nav-item" role="presentation">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'details'}
+              className={`nav-link border-0 ${activeTab === 'details' ? 'active fw-bold text-primary border-bottom border-primary border-3' : 'text-muted'}`}
+              onClick={() => setActiveTab('details')}
+            >
+              Ticket Details & Activity
+            </button>
+          </li>
+          <li className="nav-item" role="presentation">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'actions'}
+              className={`nav-link border-0 ${activeTab === 'actions' ? 'active fw-bold text-success border-bottom border-success border-3' : 'text-muted'}`}
+              onClick={() => setActiveTab('actions')}
+            >
+              Actions Taken
+            </button>
+          </li>
+        </ul>
+      </div>
       
       <div className="card-body bg-light">
-        <div className="row">
+        {activeTab === 'actions' ? (
+          <ActionsTaken
+            ticketId={ticket.id}
+            ticketCreatedAt={ticket.createdAt}
+            ticketStatus={ticket.status}
+            readOnly={false}
+            onActionSaved={fetchTicket}
+          />
+        ) : (
+          <div className="row">
           {/* COLONNE GAUCHE : Infos et Propriétés */}
           <div className="col-md-5 border-end pe-4">
+            {/* Advisory indicator callout (BR-14) */}
+            {ticket.requesterResolvedIndicatedAt && (
+              <div className="alert alert-info py-2 px-3 small mb-3">
+                💡 <strong>Requester indicates this is resolved</strong> ({new Date(ticket.requesterResolvedIndicatedAt).toLocaleDateString()})
+              </div>
+            )}
+
+            {/* Terminal state locked notice (BR-08) */}
+            {(ticket.status === 'Closed' || ticket.status === 'Cancelled') && (
+              <div className="alert alert-secondary py-2 px-3 small mb-3">
+                🔒 This ticket is {ticket.status.toLowerCase()} and cannot be modified.
+              </div>
+            )}
+
+            {/* Conflict Error (409) */}
+            {conflictError && (
+              <div className="alert alert-danger d-flex justify-content-between align-items-center mb-3 py-2 px-3 small">
+                <span>⚠️ {conflictError}</span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger ms-2"
+                  onClick={fetchTicket}
+                >
+                  Reload
+                </button>
+              </div>
+            )}
+
+            {/* Resolution Blockers Checklist (BR-13) */}
+            {blockers.length > 0 && (
+              <div className="alert alert-danger py-2 px-3 small mb-3">
+                <strong>⚠️ Resolution Blocked:</strong>
+                <ul className="mb-0 ps-3 mt-1">
+                  {blockers.includes('NO_OWNER') && (
+                    <li>Ticket must have an active IT Staff or Administrator owner</li>
+                  )}
+                  {blockers.includes('NO_ACTIONS') && (
+                    <li>At least one Action Taken must be recorded</li>
+                  )}
+                  {blockers.includes('OPEN_FOLLOW_UP') && (
+                    <li>All Action Taken follow-ups must be completed</li>
+                  )}
+                  {blockers.includes('NO_RESOLUTION_SUMMARY') && (
+                    <li>A Resolution Summary (1-1000 characters) is required</li>
+                  )}
+                </ul>
+              </div>
+            )}
+
             <h6 className="fw-bold mb-3">Requester Info</h6>
             <div className="p-3 bg-white border rounded mb-4">
               <p className="mb-1"><strong>Name:</strong> {ticket.requester.name}</p>
@@ -160,10 +288,17 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
             </div>
 
             <h6 className="fw-bold mb-3">Ticket Properties</h6>
-            <form onSubmit={handleUpdateTicket} className="p-3 bg-white border rounded mb-4">
+            <form onSubmit={handleUpdateTicket} noValidate className="p-3 bg-white border rounded mb-4">
               <div className="mb-3">
-                <label className="form-label small fw-bold">IT Priority</label>
-                <select className="form-select form-select-sm" value={itPriority} onChange={e => setItPriority(e.target.value)}>
+                <label htmlFor="it-priority-select" className="form-label small fw-bold">IT Priority</label>
+                <select
+                  id="it-priority-select"
+                  aria-label="IT Priority"
+                  className="form-select form-select-sm"
+                  value={itPriority}
+                  onChange={e => setItPriority(e.target.value)}
+                  disabled={ticket.status === 'Closed' || ticket.status === 'Cancelled' || updating}
+                >
                   <option value="">Unassigned</option>
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
@@ -171,19 +306,46 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
                 </select>
               </div>
               <div className="mb-3">
-                <label className="form-label small fw-bold">Status</label>
-                <select className="form-select form-select-sm" value={status} onChange={e => setStatus(e.target.value)}>
-                  <option value="New">New</option>
-                  <option value="Open">Open</option>
-                  <option value="InProgress">In Progress</option>
-                  <option value="WaitingForRequester">Waiting For Requester</option>
-                  <option value="Resolved">Resolved</option>
-                  <option value="Closed">Closed</option>
-                  <option value="Reopened">Reopened</option>
-                  <option value="Cancelled">Cancelled</option>
+                <label htmlFor="status-select" className="form-label small fw-bold">Status</label>
+                <select
+                  id="status-select"
+                  aria-label="Status"
+                  className="form-select form-select-sm"
+                  value={status}
+                  onChange={e => setStatus(e.target.value)}
+                  disabled={ticket.status === 'Closed' || ticket.status === 'Cancelled' || updating}
+                >
+                  {Array.from(new Set([ticket.status, ...(ticket.allowedTransitions || [])])).map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
                 </select>
               </div>
-              <button type="submit" className="btn btn-sm btn-primary w-100" disabled={updating}>
+
+              {/* Resolution Summary field shown when Resolved is selected */}
+              {(status === 'Resolved' || ticket.status === 'Resolved') && (
+                <div className="mb-3">
+                  <label htmlFor="resolutionSummary" className="form-label small fw-bold">
+                    Resolution Summary <span className="text-danger">*</span>
+                  </label>
+                  <textarea
+                    id="resolutionSummary"
+                    aria-label="Resolution Summary"
+                    rows={3}
+                    className="form-control form-control-sm"
+                    placeholder="Describe how the problem was resolved..."
+                    value={resolutionSummary}
+                    onChange={e => setResolutionSummary(e.target.value)}
+                    disabled={ticket.status === 'Closed' || ticket.status === 'Cancelled' || updating}
+                    required
+                  />
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="btn btn-sm btn-primary w-100"
+                disabled={ticket.status === 'Closed' || ticket.status === 'Cancelled' || updating}
+              >
                 {updating ? 'Saving...' : 'Save Properties'}
               </button>
             </form>
@@ -249,6 +411,7 @@ export default function StaffTicketDetail({ ticketId, onBack }: Props) {
 
           </div>
         </div>
+        )}
       </div>
     </div>
   );
