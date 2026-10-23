@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.js'; 
+import actionsRoutes from './routes/actions.js';
 import bcrypt from 'bcrypt';
 
 // --- IMPORT DE NOS NOUVEAUX MIDDLEWARES ---
@@ -17,6 +18,7 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 app.use('/api/auth', authRoutes);
+app.use('/api', actionsRoutes);
 
 // --- CONFIGURATION MULTER ---
 const storage = multer.diskStorage({
