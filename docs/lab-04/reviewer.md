@@ -6,31 +6,39 @@
 ## Pull Requests I authored (reviewed by my partner)
 | Issue | PR | Branch | Reviewer verdict |
 |-------|----|--------|------------------|
-| #20 | https://github.com/ClemDelGh/toktickit/pull/<N> | feature/20-sprint4-contract | Approved |
-| #21 | https://github.com/ClemDelGh/toktickit/pull/<N> | feature/21-data-foundation | Approved |
-| #22 | https://github.com/ClemDelGh/toktickit/pull/<N> | feature/22-actions-taken-api | Approved |
-| #23 | https://github.com/ClemDelGh/toktickit/pull/<N> | feature/23-actions-taken-ui | Approved |
-| #24 | https://github.com/ClemDelGh/toktickit/pull/<N> | feature/24-ticket-workflow | Approved |
-| #25 | https://github.com/ClemDelGh/toktickit/pull/<N> | feature/25-requester-dashboard | Approved |
-| #26 | https://github.com/ClemDelGh/toktickit/pull/<N> | feature/26-staff-dashboard | Approved |
-| #27 | https://github.com/ClemDelGh/toktickit/pull/<N> | feature/27-hardening-regression | Approved |
-| #28 | https://github.com/ClemDelGh/toktickit/pull/<N> | feature/28-e2e-release | Approved |
+| #20 | https://github.com/ClemDelGh/toktickit/pull/46 | feature/20-specification | Approved |
+| #21 | https://github.com/ClemDelGh/toktickit/pull/48 | feature/21-database-updates | Approved |
+| #22 | https://github.com/ClemDelGh/toktickit/pull/50 | feature/22-actions-taken-api | Approved |
+| #23 | https://github.com/ClemDelGh/toktickit/pull/52 | feature/23-actions-taken-ui | Approved |
+| #24 | https://github.com/ClemDelGh/toktickit/pull/54 | feature/24-ticket-workflow | Approved |
+| #25 | https://github.com/ClemDelGh/toktickit/pull/56 | feature/25-requester-dashboard | Approved |
+| #26 | https://github.com/ClemDelGh/toktickit/pull/58 | feature/26-staff-dashboard | Approved |
+| #27 | https://github.com/ClemDelGh/toktickit/pull/60 | feature/27-hardening | Approved |
+| #28 | https://github.com/ClemDelGh/toktickit/pull/61 | feature/28-e2e-release | Approved |
 
-Release PR `lab4-staging` -> `main`: https://github.com/ClemDelGh/toktickit/pull/<N> — Approved
+Release PR `lab4-staging` -> `main`: https://github.com/ClemDelGh/toktickit/pull/62 — Approved
 
 ## Reviewer comments I received and how I responded
 | Issue | Reviewer comment | How I responded |
 |-------|------------------|-----------------|
-| #20 | Comprehensive contract; the transition matrix and resolution gate conditions are clear. | Thanks! Proceeding with data foundation. |
-| #21 | Migration and rollback scripts execute cleanly; seed accounts conform to spec §7.4. | Verified rollback rehearsal script before merging. |
-| #22 | Action Taken CRUD and optimistic locking (expectedVersion) match API contract. | Validated concurrency tests and idempotency with clientRequestId. |
-| #23 | Clean responsive table/cards and follow-up completion toggle. | Confirmed requester read-only mode disables edit controls. |
-| #24 | Resolution gate blockers and advisory indicator follow business rules (BR-07..BR-14). | Tested 409 conflict handling with reload mechanism. |
-| #25 | Metric cards and drill-downs navigate correctly to My Tickets with status filters. | Zero-state display for David Lee verified. |
-| #26 | Role boundaries verified: Users card only visible to Administrator. | Queue drill-down parameter mapping verified. |
-| #27 | Hardening tests catch DB session revocation and 404/403 leakage properly. | Unified error shape `{ error, code }` harmonized. |
-| #28 | All 150 server, 53 client, and 17 Playwright E2E tests pass with zero accessibility violations. | Final release PR opened to main. |
+| #20 | Looking fine | Thanks! |
+| #21 | Thumbs up! | Thanks! |
+| #22 | Good | Thanks! |
+| #23 | Good | Thanks! |
+| #24 | Hi! This looks good | Thanks! |
+| #25 | Looks great actually | Thanks! |
+| #26 | Great stuff | Thanks! |
+| #27 | Looking good as usual. | Thanks! |
+| #28 | Approved, ready to release | Thanks! |
 
 ## Pull Requests I reviewed for my partner
-My comment: Great work on Sprint 4 implementation, all automated test suites pass and accessibility contrast guidelines are met. Good to merge.  
-Partner's response: Thanks!
+| Issue | PR | Branch | My review comment | Partner's response |
+|-------|----|--------|-------------------|-------------------|
+| #20 | https://github.com/ShrekIsLife1/toctickit/pull/54 | feature/20-specification | Perfect! | Thanks! |
+| #21 | https://github.com/ShrekIsLife1/toctickit/pull/55 | feature/21-contracts | I like it | Thanks! |
+| #22 | https://github.com/ShrekIsLife1/toctickit/pull/58 | feature/22-actions-taken-api | Looks good | Thanks! |
+| #23 | https://github.com/ShrekIsLife1/toctickit/pull/59 | feature/23-ticket-workflow | Looks good | Thanks! |
+| #24 | https://github.com/ShrekIsLife1/toctickit/pull/60 | feature/24-actions-taken-ui | looks clean | Thanks! |
+| #25 | https://github.com/ShrekIsLife1/toctickit/pull/61 | feature/25-dashboards | Looks good | Thanks! |
+| #26 | https://github.com/ShrekIsLife1/toctickit/pull/62 | feature/26-hardening | Looks good | Thanks! |
+| #27 | https://github.com/ShrekIsLife1/toctickit/pull/63 | feature/27-visual-e2e-release | Good job!!!!!!!!!!!!!!! | Thank you mister sir! Loved your comments! |
