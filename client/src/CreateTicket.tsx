@@ -144,8 +144,9 @@ export default function CreateTicket({ requester }: CreateTicketProps = {}) {
           </div>
 
           <div className="mb-3">
-            <label className="form-label fw-bold text-dark">Summary <span className="text-danger">*</span></label>
+            <label htmlFor="summary" className="form-label fw-bold text-dark">Summary <span className="text-danger">*</span></label>
             <input 
+              id="summary"
               type="text" 
               className={`form-control ${errors.summary ? 'is-invalid' : ''}`} 
               value={summary} 
@@ -156,8 +157,9 @@ export default function CreateTicket({ requester }: CreateTicketProps = {}) {
           </div>
 
           <div className="mb-4">
-            <label className="form-label fw-bold text-dark">Description <span className="text-danger">*</span></label>
+            <label htmlFor="description" className="form-label fw-bold text-dark">Description <span className="text-danger">*</span></label>
             <textarea 
+              id="description"
               className={`form-control ${errors.description ? 'is-invalid' : ''}`} 
               rows={5} 
               value={description} 

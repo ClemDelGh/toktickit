@@ -67,7 +67,7 @@ function TicketRow({ ticket }: { ticket: DashboardTicket }) {
             ticket.itPriority === 'High'
               ? 'danger'
               : ticket.itPriority === 'Medium'
-              ? 'warning'
+              ? 'warning text-dark'
               : 'secondary'
           }`}
         >
@@ -302,7 +302,7 @@ export default function StaffDashboard({
             style={{ cursor: 'pointer' }}
           >
             <div className="card-body">
-              <h2 className="display-5 fw-bold text-warning">{d.awaitingReview}</h2>
+              <h2 className="display-5 fw-bold" style={{ color: '#7a5900' }}>{d.awaitingReview}</h2>
               <p className="card-text text-muted mb-0">Requester Says Resolved</p>
             </div>
           </div>
@@ -379,9 +379,8 @@ export default function StaffDashboard({
             >
               <div className="card-body py-2">
                 <h4
-                  className={`fw-bold mb-0 text-${
-                    pr === 'High' ? 'danger' : pr === 'Medium' ? 'warning' : 'secondary'
-                  }`}
+                  className="fw-bold mb-0"
+                  style={{ color: pr === 'High' ? '#b02a37' : pr === 'Medium' ? '#7a5900' : '#6c757d' }}
                 >
                   {d.byItPriority[pr] ?? 0}
                 </h4>
@@ -410,7 +409,7 @@ export default function StaffDashboard({
 
         <div className="col-12">
           <div className="card shadow-sm">
-            <div className="card-header fw-semibold text-danger bg-danger bg-opacity-10">
+            <div className="card-header fw-semibold" style={{ color: '#842029', backgroundColor: '#f8d7da' }}>
               Urgent Tickets
             </div>
             <div className="card-body p-0">

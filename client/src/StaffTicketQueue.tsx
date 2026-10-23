@@ -176,7 +176,7 @@ export default function StaffTicketQueue({ queueFilter = {} }: StaffTicketQueueP
                     <p className="mb-1 text-truncate fw-bold">{t.summary}</p>
                     <p className="mb-1 small">Requester: {t.requester.name}</p>
                     <div className="d-flex justify-content-between align-items-center mt-2">
-                       <span className={`badge bg-${t.requestedPriority === 'High' ? 'danger' : 'warning'}`}>{t.requestedPriority}</span>
+                       <span className={`badge bg-${t.requestedPriority === 'High' ? 'danger' : 'warning'} text-dark`}>{t.requestedPriority}</span>
                        {/* <-- BOUTON OPEN CONNECTÉ */}
                        <button className="btn btn-sm btn-primary" onClick={() => setSelectedTicketId(t.id)}>Open</button>
                     </div>
@@ -216,7 +216,7 @@ export default function StaffTicketQueue({ queueFilter = {} }: StaffTicketQueueP
                       <td>{t.requester.name}</td>
                       <td className="text-muted">{t.ticketOwner?.name || 'Unassigned'}</td>
                       <td>
-                        <span className={`badge bg-${t.requestedPriority === 'High' ? 'danger' : t.requestedPriority === 'Medium' ? 'warning' : 'secondary'}`}>
+                        <span className={`badge bg-${t.requestedPriority === 'High' ? 'danger' : t.requestedPriority === 'Medium' ? 'warning text-dark' : 'secondary'}`}>
                           {t.requestedPriority}
                         </span>
                       </td>

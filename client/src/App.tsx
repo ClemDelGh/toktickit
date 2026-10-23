@@ -36,10 +36,12 @@ export default function App() {
   }
 
   const navButtonClass = (tab: ActiveTab) =>
-    `btn btn-sm ${activeTab === tab ? 'text-white' : 'btn-outline-success'}`;
+    `btn btn-sm fw-bold`;
   const navButtonStyle = (tab: ActiveTab): React.CSSProperties => ({
     backgroundColor: activeTab === tab ? '#006B3C' : 'transparent',
     borderColor: '#006B3C',
+    border: '1px solid #006B3C',
+    color: activeTab === tab ? '#ffffff' : '#004d2a',  // darker green for inactive = better contrast
   });
 
   const handleTabChange = (tab: ActiveTab) => {

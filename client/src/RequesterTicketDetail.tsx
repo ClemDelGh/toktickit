@@ -150,11 +150,11 @@ export default function RequesterTicketDetail({ ticketId, onBack }: Props) {
     try {
       const res = await fetch(`/api/tickets/${ticketId}/resolve`, {
         method: 'PATCH',
-        credentials: 'include' // AJOUT ICI
+        credentials: 'include'
       });
       if (!res.ok) throw new Error();
       const updated = await res.json();
-      setTicket(updated);
+      setTicket(prev => prev ? { ...prev, ...updated } : updated);
     } catch (err) {
       alert('Failed to indicate resolution.');
     } finally {

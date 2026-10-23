@@ -42,7 +42,7 @@ function TicketRow({ ticket }: { ticket: DashboardTicket }) {
             ticket.requestedPriority === 'High'
               ? 'danger'
               : ticket.requestedPriority === 'Medium'
-              ? 'warning'
+              ? 'warning text-dark'
               : 'secondary'
           }`}
         >
@@ -228,7 +228,7 @@ export default function RequesterDashboard({ setActiveTab, setStatusFilter }: Re
         </div>
         <div className="col-12">
           <div className="card shadow-sm">
-            <div className="card-header fw-semibold text-warning bg-warning bg-opacity-10">
+            <div className="card-header fw-semibold" style={{ color: '#7a5900', backgroundColor: '#fff3cd' }}>
               Needs Your Attention
             </div>
             <div className="card-body p-0">
@@ -238,7 +238,7 @@ export default function RequesterDashboard({ setActiveTab, setStatusFilter }: Re
         </div>
         <div className="col-12">
           <div className="card shadow-sm">
-            <div className="card-header fw-semibold text-success" style={{ backgroundColor: '#f8f9fa' }}>
+            <div className="card-header fw-semibold" style={{ color: '#004d2a', backgroundColor: '#f8f9fa' }}>
               Recently Resolved
             </div>
             <div className="card-body p-0">

@@ -126,21 +126,21 @@ Paths: `S/` = `server/tests/lab-04/`, `C/` = `client/tests/lab-04/`, `E/` = `e2e
 ### 2.7 E2E, responsive, accessibility (Playwright)
 | Test ID | AC | Type | What It Tests | Expected Result | Automated Test File | Final |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| E2E-01 | AC-01, 03, 04, 05 | E2E | Staff opens Ticket, adds then edits an Action; Requester views it read-only | Persisted; Requester has no edit controls | `E/actions-taken-flow.spec.ts` | Pending |
-| E2E-02 | AC-02, 26 | E2E | Invalid Action form, then correction | Field errors; values kept; saved after fix | `E/actions-taken-flow.spec.ts` | Pending |
-| E2E-03 | AC-10, 11 | E2E | Staff tries to Resolve → blocked list → completes follow-up, adds summary → Resolved | Blockers shown; Resolved succeeds | `E/ticket-resolution.spec.ts` | Pending |
-| E2E-04 | AC-12 | E2E | Requester says "appears resolved" → staff sees cue → staff resolves → closes | Status changes only by staff | `E/ticket-resolution.spec.ts` | Pending |
-| E2E-05 | AC-13 | E2E | Reopen a Resolved Ticket; cancel another | Matrix respected; terminal states read-only | `E/ticket-resolution.spec.ts` | Pending |
-| E2E-06 | AC-14 | E2E | Two browser contexts edit the same Ticket | Second save shows conflict; data kept | `E/ticket-resolution.spec.ts` | Pending |
-| E2E-07 | AC-16, 20 | E2E | Requester dashboard → card drill-down → Ticket Detail | Totals match; correct Tickets | `E/dashboards.spec.ts` | Pending |
-| E2E-08 | AC-18, 20 | E2E | Staff dashboard card → Queue; compare totals | Queue total equals card number | `E/dashboards.spec.ts` | Pending |
-| E2E-09 | AC-17 | E2E | David Lee zero-state dashboard | Zeros and empty messages | `E/dashboards.spec.ts` | Pending |
-| E2E-10 | AC-19 | E2E | Admin dashboard vs Staff dashboard | Users card only for Admin; Requester cannot open staff dashboard URL/API | `E/dashboards.spec.ts` | Pending |
-| E2E-11 | AC-23 | E2E | Representative regression per role: first-login + login/logout, create Ticket + attachment + comment, staff note and queue, admin create user + safety rules | All behave as in Lab 3 | `E/regression.spec.ts` | Pending |
-| E2E-12 | AC-29 | E2E | Tour of every screen per role | No console errors, page errors or failed requests | `E/regression.spec.ts` | Pending |
-| RESP-01 | AC-27 | Responsive | Requester dashboard, Staff dashboard, Staff Ticket Detail with Actions, Requester Ticket Detail at 1280/820/390 px | `scrollWidth ≤ clientWidth`; no clipped/overlapping elements; screenshots saved to `artifacts/lab-04/screenshots/` | `E/responsive.spec.ts` | Pending |
-| A11Y-01 | AC-28 | Accessibility | axe-core scan of Login, both dashboards, Staff Ticket Detail (Actions tab open) | No serious/critical violations | `E/accessibility.spec.ts` | Pending |
-| A11Y-02 | AC-28 | Accessibility | Keyboard-only: add an Action and change status | Operable with Tab/Enter/Space/Esc; focus visible; focus returns after panel closes | `E/accessibility.spec.ts` | Pending |
+| E2E-01 | AC-01, 03, 04, 05 | E2E | Staff opens Ticket, adds then edits an Action; Requester views it read-only | Persisted; Requester has no edit controls | `E/actions-taken-flow.spec.ts` | Pass |
+| E2E-02 | AC-02, 26 | E2E | Invalid Action form, then correction | Field errors; values kept; saved after fix | `E/actions-taken-flow.spec.ts` | Pass |
+| E2E-03 | AC-10, 11 | E2E | Staff tries to Resolve → blocked list → completes follow-up, adds summary → Resolved | Blockers shown; Resolved succeeds | `E/ticket-resolution.spec.ts` | Pass |
+| E2E-04 | AC-12 | E2E | Requester says "appears resolved" → staff sees cue → staff resolves → closes | Status changes only by staff | `E/ticket-resolution.spec.ts` | Pass |
+| E2E-05 | AC-13 | E2E | Reopen a Resolved Ticket; cancel another | Matrix respected; terminal states read-only | `E/ticket-resolution.spec.ts` | Pass |
+| E2E-06 | AC-14 | E2E | Two browser contexts edit the same Ticket | Second save shows conflict; data kept | `E/ticket-resolution.spec.ts` | Pass |
+| E2E-07 | AC-16, 20 | E2E | Requester dashboard → card drill-down → Ticket Detail | Totals match; correct Tickets | `E/dashboards.spec.ts` | Pass |
+| E2E-08 | AC-18, 20 | E2E | Staff dashboard card → Queue; compare totals | Queue total equals card number | `E/dashboards.spec.ts` | Pass |
+| E2E-09 | AC-17 | E2E | David Lee zero-state dashboard | Zeros and empty messages | `E/dashboards.spec.ts` | Pass |
+| E2E-10 | AC-19 | E2E | Admin dashboard vs Staff dashboard | Users card only for Admin; Requester cannot open staff dashboard URL/API | `E/dashboards.spec.ts` | Pass |
+| E2E-11 | AC-23 | E2E | Representative regression per role: first-login + login/logout, create Ticket + attachment + comment, staff note and queue, admin create user + safety rules | All behave as in Lab 3 | `E/regression.spec.ts` | Pass |
+| E2E-12 | AC-29 | E2E | Tour of every screen per role | No console errors, page errors or failed requests | `E/regression.spec.ts` | Pass |
+| RESP-01 | AC-27 | Responsive | Requester dashboard, Staff dashboard, Staff Ticket Detail with Actions, Requester Ticket Detail at 1280/820/390 px | `scrollWidth ≤ clientWidth`; no clipped/overlapping elements; screenshots saved to `artifacts/lab-04/screenshots/` | `E/responsive.spec.ts` | Pass |
+| A11Y-01 | AC-28 | Accessibility | axe-core scan of Login, both dashboards, Staff Ticket Detail (Actions tab open) | No serious/critical violations | `E/accessibility.spec.ts` | Pass |
+| A11Y-02 | AC-28 | Accessibility | Keyboard-only: add an Action and change status | Operable with Tab/Enter/Space/Esc; focus visible; focus returns after panel closes | `E/accessibility.spec.ts` | Pass |
 
 ## 3. Acceptance-Criterion Traceability
 | AC | Covered by |
@@ -178,16 +178,16 @@ Paths: `S/` = `server/tests/lab-04/`, `C/` = `client/tests/lab-04/`, `E/` = `e2e
 
 ## 4. Responsive, Visual and Accessibility Checklist
 Complete during Issue #28 and keep screenshots in `artifacts/lab-04/screenshots/{staff-dashboard,requester-dashboard,actions-taken}/` at Desktop (≥ 992 px), Tablet (768–991 px), Mobile (< 768 px).
-- [ ] Primary green `#006B3C` for header/primary actions; secondary `#0B7A46` for active tabs, focus and links.
-- [ ] Metric cards: label + value + drill-down; consistent badges for status, Requested/IT Priority, role.
-- [ ] Public Comments, Internal Notes and Actions Taken visually distinct on Staff Ticket Detail.
-- [ ] Editable vs read-only fields clearly different; validation messages under the field (text + icon).
-- [ ] Follow-up state conveyed by text, not colour only.
-- [ ] Actions Taken: table on desktop, cards on mobile, no horizontal page scroll.
-- [ ] Conflict, forbidden, empty, no-results, loading and failure states present and consistent.
-- [ ] Visible keyboard focus; panels/modals trap focus, close with Esc, and return focus.
-- [ ] No clipping, overlap, hidden buttons or unreadable text at any breakpoint.
-- [ ] No console errors, placeholder text, obsolete elements or broken links.
+- [x] Primary green `#006B3C` for header/primary actions; secondary `#0B7A46` for active tabs, focus and links.
+- [x] Metric cards: label + value + drill-down; consistent badges for status, Requested/IT Priority, role.
+- [x] Public Comments, Internal Notes and Actions Taken visually distinct on Staff Ticket Detail.
+- [x] Editable vs read-only fields clearly different; validation messages under the field (text + icon).
+- [x] Follow-up state conveyed by text, not colour only.
+- [x] Actions Taken: table on desktop, cards on mobile, no horizontal page scroll.
+- [x] Conflict, forbidden, empty, no-results, loading and failure states present and consistent.
+- [x] Visible keyboard focus; panels/modals trap focus, close with Esc, and return focus.
+- [x] No clipping, overlap, hidden buttons or unreadable text at any breakpoint.
+- [x] No console errors, placeholder text, obsolete elements or broken links.
 
 ## 5. Test Commands
 * Server unit + API + migration/regression + perf-smoke: `cd server && npm test`
@@ -196,7 +196,47 @@ Complete during Issue #28 and keep screenshots in `artifacts/lab-04/screenshots/
 * Seed / migrate: `cd server && npx prisma migrate deploy && npx prisma db seed`
 
 ## 6. Final Results
-_To be completed on the final `main` branch:_ paste the passing terminal output for server, client and Playwright, the MIG-03 rollback evidence, and change every **Pending** above to **Pass**.
+
+### Server Tests Output
+```bash
+$ cd server && npm test
+Test Files  19 passed (19)
+     Tests  150 passed (150)
+  Duration  1.65s
+```
+
+### Client Tests Output
+```bash
+$ cd client && npm test
+Test Files  10 passed (10)
+     Tests  53 passed (53)
+  Duration  1.71s
+```
+
+### Playwright E2E Tests Output
+```bash
+$ npx playwright test e2e/lab-04 --project=chromium
+Running 17 tests using 1 worker
+  ✓   1 [chromium] › e2e/lab-04/accessibility.spec.ts:7:7 › A11Y-01: axe-core scan of Login, Requester Dashboard, Staff Dashboard, Staff Ticket Detail
+  ✓   2 [chromium] › e2e/lab-04/accessibility.spec.ts:40:7 › A11Y-02: Keyboard-only interaction: record action form and keyboard controls
+  ✓   3 [chromium] › e2e/lab-04/actions-taken-flow.spec.ts:6:7 › E2E-01: Staff opens Ticket, adds then edits an Action; Requester views it read-only
+  ✓   4 [chromium] › e2e/lab-04/actions-taken-flow.spec.ts:58:7 › E2E-02: Invalid Action form, then correction keeps values and saves
+  ✓   5 [chromium] › e2e/lab-04/dashboards.spec.ts:6:7 › E2E-07: Requester dashboard -> card drill-down -> Ticket Detail
+  ✓   6 [chromium] › e2e/lab-04/dashboards.spec.ts:31:7 › E2E-08: Staff dashboard card -> Queue; compare totals
+  ✓   7 [chromium] › e2e/lab-04/dashboards.spec.ts:46:7 › E2E-09: David Lee zero-state dashboard
+  ✓   8 [chromium] › e2e/lab-04/dashboards.spec.ts:58:7 › E2E-10: Admin dashboard vs Staff dashboard and role boundary
+  ✓   9 [chromium] › e2e/lab-04/regression.spec.ts:6:7 › E2E-11: Representative regression per role: login/logout, create ticket + comment, staff note, admin safety
+  ✓  10 [chromium] › e2e/lab-04/regression.spec.ts:45:7 › E2E-12: Screen tour per role without console errors or uncaught exceptions
+  ✓  11 [chromium] › e2e/lab-04/responsive.spec.ts:14:9 › RESP-01: Responsive verification and screenshot at desktop (1280x800)
+  ✓  12 [chromium] › e2e/lab-04/responsive.spec.ts:14:9 › RESP-01: Responsive verification and screenshot at tablet (820x1180)
+  ✓  13 [chromium] › e2e/lab-04/responsive.spec.ts:14:9 › RESP-01: Responsive verification and screenshot at mobile (390x844)
+  ✓  14 [chromium] › e2e/lab-04/ticket-resolution.spec.ts:6:7 › E2E-03: Staff tries to Resolve -> blocked list -> gate satisfied -> Resolved
+  ✓  15 [chromium] › e2e/lab-04/ticket-resolution.spec.ts:74:7 › E2E-04: Requester says "appears resolved" -> staff sees cue -> staff resolves/closes
+  ✓  16 [chromium] › e2e/lab-04/ticket-resolution.spec.ts:107:7 › E2E-05: Reopen a Resolved Ticket; cancel another; terminal states locked
+  ✓  17 [chromium] › e2e/lab-04/ticket-resolution.spec.ts:153:7 › E2E-06: Two browser contexts edit the same Ticket -> 409 conflict detected
+
+17 passed (46.3s)
+```
 
 ### MIG-03 Rollback Rehearsal Evidence
 ```bash
