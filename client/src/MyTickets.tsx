@@ -12,7 +12,11 @@ interface Ticket {
   relatedSystem: { name: string };
 }
 
-export default function MyTickets() {
+interface MyTicketsProps {
+  requester?: any;
+}
+
+export default function MyTickets({ requester }: MyTicketsProps = {}) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);

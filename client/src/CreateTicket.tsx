@@ -3,7 +3,11 @@ import { useAuth } from './contexts/AuthContext';
 
 interface ReferenceItem { id: number; name: string; }
 
-export default function CreateTicket() {
+interface CreateTicketProps {
+  requester?: any;
+}
+
+export default function CreateTicket({ requester }: CreateTicketProps = {}) {
   const { user } = useAuth(); 
 
   const [categories, setCategories] = useState<ReferenceItem[]>([]);
