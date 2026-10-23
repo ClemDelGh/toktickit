@@ -5,6 +5,7 @@ import ChangePassword from './ChangePassword';
 import CreateTicket from './CreateTicket';
 import MyTickets from './MyTickets';
 import RequesterDashboard from './RequesterDashboard';
+import StaffDashboard from './StaffDashboard';
 import StaffTicketQueue from './StaffTicketQueue';
 import UserManagement from './UserManagement';
 
@@ -14,6 +15,7 @@ export default function App() {
   const { user, isLoading, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [queueFilter, setQueueFilter] = useState<Record<string, string>>({});
 
   if (isLoading) {
     return (
@@ -43,6 +45,7 @@ export default function App() {
   const handleTabChange = (tab: ActiveTab) => {
     setActiveTab(tab);
     if (tab !== 'list') setStatusFilter('');
+    if (tab !== 'queue') setQueueFilter({});
   };
 
   return (
@@ -150,15 +153,27 @@ export default function App() {
 
         {/* ITStaff views */}
         {user.role === 'ITStaff' && activeTab === 'dashboard' && (
-          <p>Staff Dashboard coming soon</p>
+          <StaffDashboard
+            user={user}
+            setActiveTab={setActiveTab}
+            setQueueFilter={setQueueFilter}
+          />
         )}
-        {user.role === 'ITStaff' && activeTab === 'queue' && <StaffTicketQueue />}
+        {user.role === 'ITStaff' && activeTab === 'queue' && (
+          <StaffTicketQueue queueFilter={queueFilter} />
+        )}
 
         {/* Administrator views */}
         {user.role === 'Administrator' && activeTab === 'dashboard' && (
-          <p>Dashboard coming soon</p>
+          <StaffDashboard
+            user={user}
+            setActiveTab={setActiveTab}
+            setQueueFilter={setQueueFilter}
+          />
         )}
-        {user.role === 'Administrator' && activeTab === 'queue' && <StaffTicketQueue />}
+        {user.role === 'Administrator' && activeTab === 'queue' && (
+          <StaffTicketQueue queueFilter={queueFilter} />
+        )}
         {user.role === 'Administrator' && activeTab === 'users' && <UserManagement />}
       </main>
     </div>

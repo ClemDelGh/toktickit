@@ -20,7 +20,11 @@ interface Meta {
   totalPages: number;
 }
 
-export default function StaffTicketQueue() {
+interface StaffTicketQueueProps {
+  queueFilter?: Record<string, string>;
+}
+
+export default function StaffTicketQueue({ queueFilter = {} }: StaffTicketQueueProps = {}) {
   // <-- NOUVEL ÉTAT POUR MÉMORISER LE TICKET SÉLECTIONNÉ
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   
@@ -54,6 +58,13 @@ export default function StaffTicketQueue() {
     if (status) params.append('status', status);
     if (priority) params.append('priority', priority);
 
+    // Apply queueFilter
+    for (const [key, val] of Object.entries(queueFilter)) {
+      if (val !== undefined && val !== null && val !== '') {
+        params.set(key, val);
+      }
+    }
+
     // AJOUT ICI : { credentials: 'include' }
     fetch(`/api/staff/tickets?${params.toString()}`, { credentials: 'include' })
       .then(res => {
@@ -76,7 +87,7 @@ export default function StaffTicketQueue() {
     if (!selectedTicketId) {
       fetchTickets();
     }
-  }, [search, status, priority, page, sortField, sortOrder, selectedTicketId]);
+  }, [search, status, priority, page, sortField, sortOrder, selectedTicketId, queueFilter]);
 
   // Gérer le changement de tri
   const handleSort = (field: string) => {

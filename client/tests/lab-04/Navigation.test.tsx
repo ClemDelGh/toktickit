@@ -26,6 +26,9 @@ vi.mock('../../src/RequesterDashboard', () => ({
     </div>
   ),
 }));
+vi.mock('../../src/StaffDashboard', () => ({
+  default: () => <div>Staff Dashboard coming soon</div>,
+}));
 vi.mock('../../src/StaffTicketQueue', () => ({
   default: () => <div>Staff Queue Page</div>,
 }));

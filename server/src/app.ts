@@ -231,7 +231,174 @@ app.get('/api/dashboard/requester', requireAuth, requireRole(['Requester']), asy
       recentlyResolved,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch requester dashboard' });
+    sendError(res, 500, 'INTERNAL_ERROR', 'Failed to fetch requester dashboard');
+  }
+});
+
+// GET /api/dashboard/staff — ITStaff and Administrator
+const TERMINAL_STATUSES = ['Closed', 'Cancelled'] as const;
+
+app.get('/api/dashboard/staff', requireAuth, requireRole(['ITStaff', 'Administrator']), async (req, res) => {
+  const userId = (req as any).user.userId;
+  const userRole = (req as any).user.role;
+  const isAdmin = userRole === 'Administrator';
+
+  try {
+    const prisma = getPrisma();
+
+    const [
+      unassigned,
+      myAssigned,
+      statusCounts,
+      highPriority,
+      medPriority,
+      lowPriority,
+      awaitingReview,
+      myOpenFollowUps,
+      myRecentTickets,
+      urgentTickets,
+      myRecentActionsRaw,
+      userCounts,
+    ] = await Promise.all([
+      // unassigned: active tickets without owner
+      prisma.ticket.count({
+        where: {
+          ticketOwnerId: null,
+          status: { in: [...ACTIVE_DASHBOARD_STATUSES] },
+        },
+      }),
+      // myAssigned: active tickets owned by me
+      prisma.ticket.count({
+        where: {
+          ticketOwnerId: userId,
+          status: { in: [...ACTIVE_DASHBOARD_STATUSES] },
+        },
+      }),
+      // byStatus: count for each of the 8 statuses
+      Promise.all(
+        VALID_TICKET_STATUSES.map((status) =>
+          prisma.ticket.count({ where: { status } })
+        )
+      ),
+      // byItPriority (active tickets only)
+      prisma.ticket.count({
+        where: {
+          itPriority: 'High',
+          status: { in: [...ACTIVE_DASHBOARD_STATUSES] },
+        },
+      }),
+      prisma.ticket.count({
+        where: {
+          itPriority: 'Medium',
+          status: { in: [...ACTIVE_DASHBOARD_STATUSES] },
+        },
+      }),
+      prisma.ticket.count({
+        where: {
+          itPriority: 'Low',
+          status: { in: [...ACTIVE_DASHBOARD_STATUSES] },
+        },
+      }),
+      // awaitingReview: active tickets where requesterResolvedIndicatedAt != null
+      prisma.ticket.count({
+        where: {
+          requesterResolvedIndicatedAt: { not: null },
+          status: { in: [...ACTIVE_DASHBOARD_STATUSES] },
+        },
+      }),
+      // myOpenFollowUps: open follow-ups on non-terminal tickets performed by me
+      prisma.actionTaken.count({
+        where: {
+          performedById: userId,
+          followUpRequired: true,
+          followUpCompletedAt: null,
+          ticket: {
+            status: { notIn: [...TERMINAL_STATUSES] },
+          },
+        },
+      }),
+      // myRecentTickets: <= 5, ticketOwnerId = me, updatedAt desc
+      prisma.ticket.findMany({
+        where: { ticketOwnerId: userId },
+        select: TICKET_SUMMARY_SELECT,
+        orderBy: { updatedAt: 'desc' },
+        take: 5,
+      }),
+      // urgentTickets: <= 5, itPriority = High & active, createdAt asc
+      prisma.ticket.findMany({
+        where: {
+          itPriority: 'High',
+          status: { in: [...ACTIVE_DASHBOARD_STATUSES] },
+        },
+        select: TICKET_SUMMARY_SELECT,
+        orderBy: { createdAt: 'asc' },
+        take: 5,
+      }),
+      // myRecentActions: <= 5, performedById = me, actionDateTime desc
+      prisma.actionTaken.findMany({
+        where: { performedById: userId },
+        select: {
+          id: true,
+          ticketId: true,
+          description: true,
+          actionDateTime: true,
+          result: true,
+        },
+        orderBy: { actionDateTime: 'desc' },
+        take: 5,
+      }),
+      // Admin user counts
+      isAdmin
+        ? Promise.all([
+            prisma.user.count({ where: { isActive: true } }),
+            prisma.user.count({ where: { isActive: false } }),
+            prisma.user.count({ where: { role: 'Requester' } }),
+            prisma.user.count({ where: { role: 'ITStaff' } }),
+            prisma.user.count({ where: { role: 'Administrator' } }),
+          ]).then(([active, inactive, requester, staff, admin]) => ({
+            active,
+            inactive,
+            byRole: {
+              Requester: requester,
+              ITStaff: staff,
+              Administrator: admin,
+            },
+          }))
+        : Promise.resolve(undefined),
+    ]);
+
+    const byStatus: Record<string, number> = {};
+    VALID_TICKET_STATUSES.forEach((s, idx) => {
+      byStatus[s] = statusCounts[idx];
+    });
+
+    const myRecentActions = myRecentActionsRaw.map((a) => ({
+      ...a,
+      description:
+        a.description && a.description.length > 120
+          ? a.description.slice(0, 120)
+          : a.description,
+    }));
+
+    res.json({
+      generatedAt: new Date().toISOString(),
+      unassigned,
+      myAssigned,
+      byStatus,
+      byItPriority: {
+        High: highPriority,
+        Medium: medPriority,
+        Low: lowPriority,
+      },
+      awaitingReview,
+      myOpenFollowUps,
+      myRecentTickets,
+      urgentTickets,
+      myRecentActions,
+      ...(userCounts ? { userCounts } : {}),
+    });
+  } catch (error) {
+    sendError(res, 500, 'INTERNAL_ERROR', 'Failed to fetch staff dashboard');
   }
 });
 
@@ -344,23 +511,127 @@ app.patch('/api/tickets/:id/resolve', requireAuth, async (req, res) => {
 // ==========================================
 
 // Issue 15: File d'attente (Staff & Admin)
+const ALLOWED_STAFF_SORT_FIELDS = [
+  'createdAt',
+  'updatedAt',
+  'ticketNumber',
+  'summary',
+  'requestedPriority',
+  'itPriority',
+  'status',
+] as const;
+
 app.get('/api/staff/tickets', requireAuth, requireRole(['ITStaff', 'Administrator']), async (req, res) => {
   try {
-    const { search, status, priority, page = '1', limit = '10', sortField = 'createdAt', sortOrder = 'desc' } = req.query;
+    const {
+      search,
+      status,
+      priority,
+      itPriority,
+      owner,
+      indicated,
+      page = '1',
+      limit = '10',
+      sortField = 'createdAt',
+      sortOrder = 'desc',
+    } = req.query;
+
     const prisma = getPrisma();
     const where: any = {};
 
+    // Validate sortField
+    if (sortField !== undefined) {
+      if (!(ALLOWED_STAFF_SORT_FIELDS as readonly string[]).includes(String(sortField))) {
+        return sendError(res, 400, 'VALIDATION_ERROR', `Invalid sortField: ${sortField}`);
+      }
+    }
+
+    // Validate sortOrder
+    if (sortOrder !== undefined) {
+      if (sortOrder !== 'asc' && sortOrder !== 'desc') {
+        return sendError(res, 400, 'VALIDATION_ERROR', `Invalid sortOrder: ${sortOrder}`);
+      }
+    }
+
+    // Validate page
+    const pageNumber = Number(page);
+    if (!Number.isInteger(pageNumber) || pageNumber < 1) {
+      return sendError(res, 400, 'VALIDATION_ERROR', 'page must be an integer >= 1');
+    }
+
+    // Validate limit
+    const limitNumber = Number(limit);
+    if (!Number.isInteger(limitNumber) || limitNumber < 1 || limitNumber > 100) {
+      return sendError(res, 400, 'VALIDATION_ERROR', 'limit must be an integer between 1 and 100');
+    }
+
+    // Validate owner
+    if (owner !== undefined && owner !== '') {
+      const ownerStr = String(owner);
+      if (ownerStr !== 'me' && ownerStr !== 'unassigned') {
+        return sendError(res, 400, 'VALIDATION_ERROR', 'owner must be me or unassigned');
+      }
+      if (ownerStr === 'me') {
+        where.ticketOwnerId = (req as any).user.userId;
+      } else if (ownerStr === 'unassigned') {
+        where.ticketOwnerId = null;
+      }
+    }
+
+    // Validate itPriority
+    if (itPriority !== undefined && itPriority !== '') {
+      const itPriorityStr = String(itPriority);
+      if (!['Low', 'Medium', 'High'].includes(itPriorityStr)) {
+        return sendError(res, 400, 'VALIDATION_ERROR', `Invalid itPriority: ${itPriorityStr}`);
+      }
+      where.itPriority = itPriorityStr;
+    }
+
+    // Validate indicated
+    if (indicated !== undefined && indicated !== '') {
+      const indicatedStr = String(indicated);
+      if (indicatedStr !== 'true' && indicatedStr !== 'false') {
+        return sendError(res, 400, 'VALIDATION_ERROR', 'indicated must be true or false');
+      }
+      if (indicatedStr === 'true') {
+        where.requesterResolvedIndicatedAt = { not: null };
+      } else {
+        where.requesterResolvedIndicatedAt = null;
+      }
+    }
+
+    // Validate status (supports comma-separated values)
+    if (status !== undefined && status !== '') {
+      const rawStatus = String(status);
+      const parts = rawStatus.split(',').map((s) => s.trim());
+      if (parts.length === 0 || parts.some((s) => !s)) {
+        return sendError(res, 400, 'VALIDATION_ERROR', 'Invalid status format');
+      }
+      for (const s of parts) {
+        if (!(VALID_TICKET_STATUSES as readonly string[]).includes(s)) {
+          return sendError(res, 400, 'VALIDATION_ERROR', `Invalid status value: ${s}`);
+        }
+      }
+      if (parts.length === 1) {
+        where.status = parts[0];
+      } else {
+        where.status = { in: parts };
+      }
+    }
+
+    // Legacy priority filter
+    if (priority) {
+      where.requestedPriority = String(priority);
+    }
+
+    // Search filter
     if (search) {
       where.OR = [
         { ticketNumber: { contains: String(search), mode: 'insensitive' } },
-        { summary: { contains: String(search), mode: 'insensitive' } }
+        { summary: { contains: String(search), mode: 'insensitive' } },
       ];
     }
-    if (status) where.status = String(status);
-    if (priority) where.requestedPriority = String(priority);
 
-    const pageNumber = Math.max(1, Number(page));
-    const limitNumber = Math.max(1, Number(limit));
     const skip = (pageNumber - 1) * limitNumber;
 
     const [total, tickets] = await Promise.all([
@@ -370,12 +641,12 @@ app.get('/api/staff/tickets', requireAuth, requireRole(['ITStaff', 'Administrato
         include: {
           category: { select: { name: true } },
           requester: { select: { name: true } },
-          ticketOwner: { select: { name: true } }
+          ticketOwner: { select: { name: true } },
         },
         orderBy: { [String(sortField)]: sortOrder === 'asc' ? 'asc' : 'desc' },
         skip,
-        take: limitNumber
-      })
+        take: limitNumber,
+      }),
     ]);
 
     res.json({
@@ -384,11 +655,11 @@ app.get('/api/staff/tickets', requireAuth, requireRole(['ITStaff', 'Administrato
         total,
         page: pageNumber,
         limit: limitNumber,
-        totalPages: Math.ceil(total / limitNumber)
-      }
+        totalPages: Math.ceil(total / limitNumber),
+      },
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch staff tickets' });
+    sendError(res, 500, 'INTERNAL_ERROR', 'Failed to fetch staff tickets');
   }
 });
 
