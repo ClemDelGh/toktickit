@@ -32,17 +32,17 @@ async function main() {
     passwordHash: string;
     mustChangePassword: boolean;
   }> = [
-    { email: "jennifer.a@example.com", name: "Jennifer Anderson", isActive: true, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: true },
-    { email: "michael.b@example.com", name: "Michael Brown", isActive: true, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: true },
-    { email: "sarah.j@example.com", name: "Sarah Johnson", isActive: true, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: true },
-    { email: "david.l@example.com", name: "David Lee", isActive: true, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: true },
-    { email: "inactive.user@example.com", name: "Inactive User", isActive: false, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: true },
-    { email: "staff@example.com", name: "Staff User", isActive: true, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: true },
-    { email: "it1@example.com", name: "IT Staff One", isActive: true, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: true },
-    { email: "it2@example.com", name: "IT Staff Two", isActive: true, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: true },
-    { email: "it3@example.com", name: "IT Staff Three", isActive: true, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: true },
-    { email: "it.inactive@example.com", name: "Inactive IT", isActive: false, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: true },
-    { email: "admin@example.com", name: "System Admin", isActive: true, role: Role.Administrator, passwordHash: defaultHash, mustChangePassword: true }
+    { email: "jennifer.a@example.com", name: "Jennifer Anderson", isActive: true, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: false },
+    { email: "michael.b@example.com", name: "Michael Brown", isActive: true, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: false },
+    { email: "sarah.j@example.com", name: "Sarah Johnson", isActive: true, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: false },
+    { email: "david.l@example.com", name: "David Lee", isActive: true, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: false },
+    { email: "inactive.user@example.com", name: "Inactive User", isActive: false, role: Role.Requester, passwordHash: defaultHash, mustChangePassword: false },
+    { email: "staff@example.com", name: "Staff User", isActive: true, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: false },
+    { email: "it1@example.com", name: "IT Staff One", isActive: true, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: false },
+    { email: "it2@example.com", name: "IT Staff Two", isActive: true, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: false },
+    { email: "it3@example.com", name: "IT Staff Three", isActive: true, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: false },
+    { email: "it.inactive@example.com", name: "Inactive IT", isActive: false, role: Role.ITStaff, passwordHash: defaultHash, mustChangePassword: false },
+    { email: "admin@example.com", name: "System Admin", isActive: true, role: Role.Administrator, passwordHash: defaultHash, mustChangePassword: false }
   ];
 
   for (const user of users) {

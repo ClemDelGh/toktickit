@@ -235,4 +235,42 @@ describe('App Navigation (UI-20)', () => {
       expect(activeBtns[0]).toBe(myTicketsBtn);
     });
   });
+
+  // -----------------------------------------------------------------------
+  // UI-21: Accessible names
+  // -----------------------------------------------------------------------
+  describe('UI-21: Accessible names', () => {
+    it('all navigation and action controls have accessible names', async () => {
+      (useAuth as any).mockReturnValue({
+        user: REQUESTER_USER,
+        isLoading: false,
+        logout: vi.fn(),
+      });
+
+      render(<App />);
+
+      expect(screen.getByRole('button', { name: /^Dashboard$/i })).toHaveAccessibleName();
+      expect(screen.getByRole('button', { name: /^Create Ticket$/i })).toHaveAccessibleName();
+      expect(screen.getByRole('button', { name: /^My Tickets$/i })).toHaveAccessibleName();
+      expect(screen.getByRole('button', { name: /^Logout$/i })).toHaveAccessibleName();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // UI-22: Obsolete UI removed
+  // -----------------------------------------------------------------------
+  describe('UI-22: Obsolete UI removed', () => {
+    it('no Lab 1 "Check System" or obsolete placeholders rendered', async () => {
+      (useAuth as any).mockReturnValue({
+        user: REQUESTER_USER,
+        isLoading: false,
+        logout: vi.fn(),
+      });
+
+      render(<App />);
+
+      expect(screen.queryByText(/Check System/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/AJOUT ICI/i)).not.toBeInTheDocument();
+    });
+  });
 });
